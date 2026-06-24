@@ -8,7 +8,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
   <!-- KaTeX CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
@@ -16,10 +16,10 @@
   <!-- Custom Styles -->
   <style>
     :root {
-      --bg-base: #0b0f19;
-      --bg-surface: #151d30;
-      --bg-card: #1f2a44;
-      --border-color: #2e3d60;
+      --bg-base: #0a0d16;
+      --bg-surface: #111625;
+      --bg-card: #1b2032;
+      --border-color: #272f47;
       
       --color-primary: #f5a623;    /* Amber/Gold */
       --color-secondary: #2da8a0;  /* Teal */
@@ -35,75 +35,127 @@
       padding: 0;
     }
     
+    html {
+      scroll-behavior: smooth;
+    }
+    
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-base);
       color: var(--color-text-main);
       line-height: 1.6;
-      padding: 2rem;
+      padding-bottom: 5rem;
     }
     
-    header {
-      max-width: 1400px;
-      margin: 0 auto 2.5rem auto;
+    /* Navigation Bar */
+    nav {
+      position: sticky;
+      top: 0;
+      background-color: rgba(17, 22, 37, 0.9);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
-      padding-bottom: 1.5rem;
+      z-index: 100;
+      padding: 1rem 2rem;
     }
     
-    h1 {
-      font-size: 2.25rem;
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .nav-brand {
       font-weight: 700;
+      font-size: 1.25rem;
       background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
+      text-decoration: none;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    
+    .nav-links a {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover {
+      color: var(--color-text-main);
+    }
+    
+    /* Hero Header */
+    header {
+      max-width: 1200px;
+      margin: 4rem auto 3rem auto;
+      padding: 0 2rem;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     
     .subtitle {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       color: var(--color-text-muted);
-    }
-    
-    .container {
-      max-width: 1400px;
+      max-width: 800px;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
     }
     
-    @media (max-width: 1024px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
+    /* Main Layout */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
     }
     
+    /* Section Cards */
     .section-card {
       background-color: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 2rem;
+      border-radius: 16px;
+      padding: 2.5rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      scroll-margin-top: 5rem;
     }
     
     h2 {
-      font-size: 1.5rem;
-      font-weight: 600;
+      font-size: 1.75rem;
+      font-weight: 700;
       color: var(--color-text-main);
       margin-bottom: 1.5rem;
-      border-left: 4px solid var(--color-secondary);
+      border-left: 5px solid var(--color-secondary);
       padding-left: 0.75rem;
     }
     
     p {
       color: var(--color-text-muted);
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 1.05rem;
     }
     
     .math-block {
       background-color: var(--bg-card);
       border-radius: 8px;
-      padding: 1rem;
+      padding: 1.25rem;
       margin: 1.5rem 0;
       overflow-x: auto;
       border: 1px dashed var(--border-color);
@@ -112,12 +164,25 @@
     .mermaid {
       background-color: var(--bg-card) !important;
       border-radius: 8px;
-      padding: 1rem;
+      padding: 1.5rem;
       margin: 1.5rem 0;
       border: 1px solid var(--border-color);
     }
     
-    /* Interactive Simulator CSS */
+    /* Grid for Sandbox */
+    .sandbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 2rem;
+    }
+    
+    @media (max-width: 900px) {
+      .sandbox-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Simulator Elements */
     .control-group {
       margin-bottom: 1.5rem;
     }
@@ -188,7 +253,6 @@
     }
     
     .canvas-container {
-      margin-top: 2rem;
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 8px;
@@ -196,6 +260,7 @@
       width: 100%;
       aspect-ratio: 2.2 / 1;
       overflow: hidden;
+      margin-bottom: 1rem;
     }
     
     canvas {
@@ -205,17 +270,22 @@
     }
     
     .results-panel {
-      margin-top: 2rem;
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 1.5rem;
     }
     
-    .results-grid {
+    .results-panel-grid {
       display: grid;
       grid-template-columns: 1.5fr 1fr;
       gap: 1.5rem;
+    }
+    
+    @media (max-width: 550px) {
+      .results-panel-grid {
+        grid-template-columns: 1fr;
+      }
     }
     
     .ranks-list {
@@ -269,11 +339,10 @@
       margin-top: 0.25rem;
     }
     
-    /* Key color indicators */
     .indicators {
       display: flex;
       gap: 1.5rem;
-      margin-top: 0.75rem;
+      margin-bottom: 1.5rem;
       font-size: 0.85rem;
     }
     
@@ -288,68 +357,78 @@
       height: 12px;
       border-radius: 3px;
     }
+    
+    /* Findings Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+    
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    th {
+      background-color: rgba(255, 255, 255, 0.03);
+      font-weight: 600;
+      color: var(--color-text-main);
+    }
+    
+    td {
+      color: var(--color-text-muted);
+    }
+    
+    tr:hover td {
+      color: var(--color-text-main);
+      background-color: rgba(255, 255, 255, 0.01);
+    }
   </style>
 </head>
 <body>
 
+  <!-- Stick Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="#" class="nav-brand">SNOOPFINGER CI</a>
+      <ul class="nav-links">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#mathematics">Mathematics</a></li>
+        <li><a href="#sandbox">Sandbox</a></li>
+        <li><a href="#findings">Findings</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
   <header>
     <h1>SNOOPFINGER Reimplementation and Evaluation</h1>
-    <div class="subtitle">Interactive mathematical and simulated demonstration of the side-channel attack and countermeasures</div>
+    <div class="subtitle">An end-to-end interactive report detailing threat modeling, mathematical formulations, and obfuscation countermeasures.</div>
   </header>
 
-  <div class="container">
+  <main>
     
-    <!-- LEFT SIDE: Theory & Math & Architecture -->
-    <div class="section-card">
-      <h2>Underlying Mathematical Model</h2>
-      
+    <!-- Section 1: Overview -->
+    <section id="overview" class="section-card">
+      <h2>Overview and Threat Model</h2>
       <p>
-        The SNOOPFINGER attack works by comparing the relative geometry of consecutive orientations (distances and angles) observed in the victim's gaze points to the candidate word geometry of standard dictionary words.
+        The SNOOPFINGER side-channel attack targets virtual keyboards on head-mounted displays (HMDs). By harvesting orientation data (such as head-motion tracks and gaze orientation vectors) delivered to background or unprivileged applications, an adversary can reconstruct what word the user is typing on the keyboard.
       </p>
-      
       <p>
-        The keyboard consists of standard key coordinates represented as:
+        While the original paper proposed several defense strategies in prose under "Adaptive Sensor Data Obfuscation", it failed to provide empirical evaluation metrics or target thresholds for these defenses. This reimplementation provides a quantitative framework to sweep, evaluate, and compare these defenses against the reconstructed attack mechanism.
       </p>
-      <div class="math-block">
-        \[ K_c = (x_c, y_c) \]
-      </div>
+    </section>
 
+    <!-- Section 2: System Architecture -->
+    <section id="architecture" class="section-card">
+      <h2>System Architecture Diagram</h2>
       <p>
-        For a typed word \(w\), the victim's raw key center points are perturbed by Gaussian noise representing measurement uncertainty:
+        The execution flow traces the victim's typing path, injects environmental and defense disturbances, computes geometric features, and ranks dictionary candidates based on angular and distance deviations:
       </p>
-      <div class="math-block">
-        \[ P_i = K_{w_i} + \mathcal{N}(0, \sigma^2) \]
-      </div>
-
-      <p>
-        Under the coordinate quantization countermeasure of step size \(q\), the coordinates are rounded:
-      </p>
-      <div class="math-block">
-        \[ P'_i = \text{round}\left(\frac{P_i}{q}\right) \times q \]
-      </div>
-
-      <p>
-        The observed relative geometry is extracted from consecutive points:
-      </p>
-      <div class="math-block">
-        \[ \vec{v}_i = P_{i+1} - P_i \implies d_i = \|\vec{v}_i\|_2, \quad \theta_i = \text{arctan2}(\Delta y_i, \Delta x_i) \]
-      </div>
-
-      <p>
-        The attacker scores each same-length candidate word \(w_{cand}\) by computing the sum of squared deviations in consecutive distances and circularly wrapped angles:
-      </p>
-      <div class="math-block">
-        \[ S(w_{cand}) = \sum_{i=1}^{L} \left( (d_{cand, i} - d_{obs, i})^2 + \left(\frac{\Delta\theta_i}{180}\right)^2 \right) \]
-      </div>
-      
-      <p>
-        Where \(\Delta\theta_i\) is the circular difference wrapping bounds:
-      </p>
-      <div class="math-block">
-        \[ \Delta\theta_i = (\theta_{cand, i} - \theta_{obs, i} + 180)^\circ \pmod{360} - 180^\circ \]
-      </div>
-
-      <h2 style="margin-top: 2rem;">Attack and Defense Architecture</h2>
       <div class="mermaid">
         graph TD
             A[Victim Typed Word] --> B[True Key Center Coordinates]
@@ -357,8 +436,8 @@
             
             subgraph Defenses [Sensor Obfuscation]
                 D1[Inherent Measurement Noise]
-                D2[Added Noise]
-                D3[Coordinate Quantization]
+                D2[Countermeasure: Added Noise]
+                D3[Countermeasure: Coordinate Quantization]
             end
             
             D1 --> C
@@ -377,81 +456,194 @@
             K --> L[Geometric Matching and Ranking]
             L --> M[Sorted Candidate List]
       </div>
-    </div>
-    
-    <!-- RIGHT SIDE: Interactive Sandbox -->
-    <div class="section-card">
+    </section>
+
+    <!-- Section 3: Mathematical Model -->
+    <section id="mathematics" class="section-card">
+      <h2>Mathematical Formulation</h2>
+      <p>
+        Let each key center coordinate on the layout be designated as:
+      </p>
+      <div class="math-block">
+        \[ K_c = (x_c, y_c) \]
+      </div>
+
+      <p>
+        The gaze trace coordinates corresponding to typing a word are simulated with additive Gaussian noise representing the sensor's baseline tracking inaccuracies:
+      </p>
+      <div class="math-block">
+        \[ P_i = K_{w_i} + \mathcal{N}(0, \sigma^2) \]
+      </div>
+
+      <p>
+        Under a coordinate quantization defense of step size \(q\), the simulated gaze points are rounded to decrease orientation precision:
+      </p>
+      <div class="math-block">
+        \[ P'_i = \text{round}\left(\frac{P_i}{q}\right) \times q \]
+      </div>
+
+      <p>
+        For any path, the consecutive geometry vectors \(\vec{v}_i\) yield the distance \(d_i\) and circular angle \(\theta_i\) signatures:
+      </p>
+      <div class="math-block">
+        \[ \vec{v}_i = P_{i+1} - P_i \implies d_i = \|\vec{v}_i\|_2, \quad \theta_i = \text{arctan2}(\Delta y_i, \Delta x_i) \]
+      </div>
+
+      <p>
+        To evaluate a candidate word, we rank it by calculating the sum of squared deviations across consecutive distance metrics and wrapped angle differences:
+      </p>
+      <div class="math-block">
+        \[ S(w_{cand}) = \sum_{i=1}^{L} \left( (d_{cand, i} - d_{obs, i})^2 + \left(\frac{\Delta\theta_i}{180}\right)^2 \right) \]
+      </div>
+      <p>
+        where \(\Delta\theta_i\) represents the smallest angular difference:
+      </p>
+      <div class="math-block">
+        \[ \Delta\theta_i = (\theta_{cand, i} - \theta_{obs, i} + 180)^\circ \pmod{360} - 180^\circ \]
+      </div>
+    </section>
+
+    <!-- Section 4: Interactive Simulation -->
+    <section id="sandbox" class="section-card">
       <h2>Interactive Attack Simulator</h2>
       <p>
-        Type a 3-6 letter English word, configure the obfuscation strengths, and watch SNOOPFINGER try to guess the typed word in real-time.
+        Adjust the defense sliders below to inject added noise or coordinate quantization, then simulate the SNOOPFINGER attack. The canvas plots the true keyboard keys and paths alongside the simulated noisy paths.
       </p>
       
-      <div class="control-group">
-        <label for="typed-word">Word to Type (3-6 letters)</label>
-        <input type="text" id="typed-word" class="input-text" value="code" maxlength="6">
-      </div>
-      
-      <div class="control-group">
-        <label for="noise-slider">Added Defense Noise (std dev in key-width units)</label>
-        <div class="slider-container">
-          <input type="range" id="noise-slider" class="slider" min="0" max="1.5" step="0.05" value="0.0">
-          <span id="noise-val" class="slider-val">0.00</span>
-        </div>
-      </div>
-      
-      <div class="control-group">
-        <label for="quant-slider">Quantization Step Size (0.00 = OFF)</label>
-        <div class="slider-container">
-          <input type="range" id="quant-slider" class="slider" min="0" max="2.0" step="0.1" value="0.0">
-          <span id="quant-val" class="slider-val">0.00</span>
-        </div>
-      </div>
-      
-      <button id="simulate-btn" class="btn">Simulate Attack</button>
-      
-      <div class="canvas-container">
-        <canvas id="layout-canvas"></canvas>
-      </div>
-      
-      <div class="indicators">
-        <div class="indicator-item">
-          <div class="ind-color" style="background-color: #f5a623;"></div>
-          <span>True Path</span>
-        </div>
-        <div class="indicator-item">
-          <div class="ind-color" style="background-color: #2da8a0;"></div>
-          <span>Noisy Gaze Path</span>
-        </div>
-        <div class="indicator-item">
-          <div class="ind-color" style="background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);"></div>
-          <span>Keyboard Keys</span>
-        </div>
-      </div>
-      
-      <div class="results-panel">
-        <div class="results-grid">
-          <div>
-            <label style="margin-bottom: 0.75rem;">Attacker Top-8 Guesses</label>
-            <ul id="guesses-list" class="ranks-list">
-              <!-- Dynamically populated -->
-            </ul>
+      <div class="sandbox-grid">
+        <!-- Inputs Column -->
+        <div>
+          <div class="control-group">
+            <label for="typed-word">Word to Type (3-6 letters)</label>
+            <input type="text" id="typed-word" class="input-text" value="code" maxlength="6">
           </div>
           
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div class="stat-box">
-              <span id="true-rank-val" class="stat-val">1</span>
-              <span class="stat-lbl">True Word Rank</span>
+          <div class="control-group">
+            <label for="noise-slider">Added Defense Noise (std dev in key-width units)</label>
+            <div class="slider-container">
+              <input type="range" id="noise-slider" class="slider" min="0" max="1.5" step="0.05" value="0.0">
+              <span id="noise-val" class="slider-val">0.00</span>
             </div>
-            <div class="stat-box">
-              <span id="candidates-count" class="stat-val">768</span>
-              <span class="stat-lbl">Candidate Pool</span>
+          </div>
+          
+          <div class="control-group">
+            <label for="quant-slider">Quantization Step Size (0.00 = OFF)</label>
+            <div class="slider-container">
+              <input type="range" id="quant-slider" class="slider" min="0" max="2.0" step="0.1" value="0.0">
+              <span id="quant-val" class="slider-val">0.00</span>
+            </div>
+          </div>
+          
+          <button id="simulate-btn" class="btn">Simulate Attack</button>
+        </div>
+        
+        <!-- Canvas & Results Column -->
+        <div>
+          <div class="canvas-container">
+            <canvas id="layout-canvas"></canvas>
+          </div>
+          
+          <div class="indicators">
+            <div class="indicator-item">
+              <div class="ind-color" style="background-color: #f5a623;"></div>
+              <span>True Path</span>
+            </div>
+            <div class="indicator-item">
+              <div class="ind-color" style="background-color: #2da8a0;"></div>
+              <span>Observed Path</span>
+            </div>
+            <div class="indicator-item">
+              <div class="ind-color" style="background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);"></div>
+              <span>Keys</span>
+            </div>
+          </div>
+          
+          <div class="results-panel">
+            <div class="results-panel-grid">
+              <div>
+                <label style="margin-bottom: 0.5rem;">Attacker Top Guesses</label>
+                <ul id="guesses-list" class="ranks-list">
+                  <!-- Dynamically populated -->
+                </ul>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="stat-box">
+                  <span id="true-rank-val" class="stat-val">1</span>
+                  <span class="stat-lbl">True Rank</span>
+                </div>
+                <div class="stat-box">
+                  <span id="candidates-count" class="stat-val">768</span>
+                  <span class="stat-lbl">Candidate Pool</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-  </div>
+    </section>
+
+    <!-- Section 5: Findings -->
+    <section id="findings" class="section-card">
+      <h2>Evaluation and Defense Findings</h2>
+      <p>
+        By evaluating the SNOOPFINGER pipeline across parameter sweeps, we established the first concrete numbers for the proposed countermeasures.
+      </p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Defense Strength</th>
+            <th>Top-1 Accuracy</th>
+            <th>Top-10% Accuracy</th>
+            <th>Signal Distortion (RMSE)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No Defense (Baseline)</td>
+            <td>0.63</td>
+            <td>1.00</td>
+            <td>0.390</td>
+          </tr>
+          <tr>
+            <td>Added Noise std 0.40</td>
+            <td>0.40</td>
+            <td>0.99</td>
+            <td>0.553</td>
+          </tr>
+          <tr>
+            <td>Added Noise std 0.80</td>
+            <td>0.17</td>
+            <td>0.88</td>
+            <td>0.872</td>
+          </tr>
+          <tr>
+            <td>Added Noise std 1.30</td>
+            <td>0.06</td>
+            <td>0.64</td>
+            <td>1.325</td>
+          </tr>
+          <tr>
+            <td>Quantization step 1.00</td>
+            <td>0.51</td>
+            <td>1.00</td>
+            <td>0.466</td>
+          </tr>
+          <tr>
+            <td>Quantization step 2.00</td>
+            <td>0.37</td>
+            <td>0.98</td>
+            <td>0.645</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top: 1.5rem;">
+        **Conclusion**: Noise-based obfuscation is significantly more effective and predictable than coordinate quantization. While noise injection monotonically degrades the attacker's accuracy toward a random regime, coordinate quantization only degrades the attack when the rounding step is large enough to exceed the physical spacing between keyboard keys.
+      </p>
+    </section>
+  </main>
 
   <!-- KaTeX Auto-render -->
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
@@ -709,7 +901,7 @@
         const rank = scored.findIndex(item => item.word === rawWord);
         trueRankVal.textContent = rank + 1; // 1-based display rank
         
-        // Render Top-8
+        // Render TopGuesses
         guessesList.innerHTML = "";
         const topGuesses = scored.slice(0, 8);
         
@@ -727,7 +919,7 @@
           guessesList.appendChild(li);
         });
         
-        // If correct word is outside Top-8, append it at the end
+        // If correct word is outside TopGuesses, append it at the end
         if (!correctShown && rank >= 8) {
           const sep = document.createElement("li");
           sep.textContent = "...";
