@@ -8,7 +8,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
   <!-- KaTeX CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
@@ -16,15 +16,16 @@
   <!-- Custom Styles -->
   <style>
     :root {
-      --bg-base: #0a0d16;
-      --bg-surface: #111625;
-      --bg-card: #1b2032;
-      --border-color: #272f47;
+      --bg-base: #080b11;
+      --bg-surface: #0e1322;
+      --bg-card: #171c2f;
+      --border-color: #232c45;
       
       --color-primary: #f5a623;    /* Amber/Gold */
       --color-secondary: #2da8a0;  /* Teal */
       --color-text-main: #f3f4f6;
       --color-text-muted: #9ca3af;
+      --color-accent-red: #ef4444;  /* Red for Critique */
       --color-accent-blue: #3b82f6;
       --color-accent-green: #10b981;
     }
@@ -51,7 +52,7 @@
     nav {
       position: sticky;
       top: 0;
-      background-color: rgba(17, 22, 37, 0.9);
+      background-color: rgba(14, 19, 34, 0.9);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       z-index: 100;
@@ -59,7 +60,7 @@
     }
     
     .nav-container {
-      max-width: 1200px;
+      max-width: 1300px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
@@ -67,17 +68,18 @@
     }
     
     .nav-brand {
-      font-weight: 700;
-      font-size: 1.25rem;
+      font-weight: 800;
+      font-size: 1.3rem;
       background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       text-decoration: none;
+      letter-spacing: -0.02em;
     }
     
     .nav-links {
       display: flex;
-      gap: 1.5rem;
+      gap: 1.75rem;
       list-style: none;
     }
     
@@ -95,16 +97,17 @@
     
     /* Hero Header */
     header {
-      max-width: 1200px;
+      max-width: 1300px;
       margin: 4rem auto 3rem auto;
       padding: 0 2rem;
       text-align: center;
     }
     
     h1 {
-      font-size: 2.75rem;
+      font-size: 3rem;
       font-weight: 800;
       margin-bottom: 1rem;
+      letter-spacing: -0.03em;
       background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -113,18 +116,18 @@
     .subtitle {
       font-size: 1.25rem;
       color: var(--color-text-muted);
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
     }
     
     /* Main Layout */
     main {
-      max-width: 1200px;
+      max-width: 1300px;
       margin: 0 auto;
       padding: 0 2rem;
       display: flex;
       flex-direction: column;
-      gap: 3rem;
+      gap: 3.5rem;
     }
     
     /* Section Cards */
@@ -137,6 +140,11 @@
       scroll-margin-top: 5rem;
     }
     
+    .section-card.alert-card {
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(239, 68, 68, 0.02) 100%);
+    }
+    
     h2 {
       font-size: 1.75rem;
       font-weight: 700;
@@ -144,6 +152,11 @@
       margin-bottom: 1.5rem;
       border-left: 5px solid var(--color-secondary);
       padding-left: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    
+    .alert-card h2 {
+      border-left-color: var(--color-accent-red);
     }
     
     p {
@@ -152,6 +165,7 @@
       font-size: 1.05rem;
     }
     
+    /* Math block */
     .math-block {
       background-color: var(--bg-card);
       border-radius: 8px;
@@ -161,6 +175,7 @@
       border: 1px dashed var(--border-color);
     }
     
+    /* Mermaid block */
     .mermaid {
       background-color: var(--bg-card) !important;
       border-radius: 8px;
@@ -169,20 +184,20 @@
       border: 1px solid var(--border-color);
     }
     
-    /* Grid for Sandbox */
+    /* Sandbox Layout */
     .sandbox-grid {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 2rem;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 2.5rem;
     }
     
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .sandbox-grid {
         grid-template-columns: 1fr;
       }
     }
     
-    /* Simulator Elements */
+    /* Interactive Simulator */
     .control-group {
       margin-bottom: 1.5rem;
     }
@@ -230,8 +245,14 @@
       font-weight: 500;
     }
     
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
     .btn {
-      width: 100%;
+      flex-grow: 1;
       background: linear-gradient(135deg, var(--color-secondary), #248a83);
       color: white;
       border: none;
@@ -241,7 +262,15 @@
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.2s, transform 0.1s;
-      margin-top: 1rem;
+    }
+    
+    .btn.btn-clear {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--color-text-main);
+      flex-grow: 0;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
     }
     
     .btn:hover {
@@ -261,6 +290,7 @@
       aspect-ratio: 2.2 / 1;
       overflow: hidden;
       margin-bottom: 1rem;
+      cursor: pointer;
     }
     
     canvas {
@@ -386,28 +416,65 @@
       color: var(--color-text-main);
       background-color: rgba(255, 255, 255, 0.01);
     }
+    
+    /* Brutal Review Styles */
+    .critique-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+    
+    @media (max-width: 900px) {
+      .critique-section {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .critique-box {
+      background-color: rgba(239, 68, 68, 0.02);
+      border: 1px solid rgba(239, 68, 68, 0.15);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .critique-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #f87171;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .critique-body {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
   </style>
 </head>
 <body>
 
-  <!-- Stick Navigation -->
+  <!-- Navigation Bar -->
   <nav>
     <div class="nav-container">
-      <a href="#" class="nav-brand">SNOOPFINGER CI</a>
+      <a href="#" class="nav-brand">SNOOPFINGER CRITIQUE & SANDBOX</a>
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
+        <li><a href="#critique">Brutal Critique</a></li>
         <li><a href="#architecture">Architecture</a></li>
         <li><a href="#mathematics">Mathematics</a></li>
-        <li><a href="#sandbox">Sandbox</a></li>
+        <li><a href="#sandbox">Live Sandbox</a></li>
         <li><a href="#findings">Findings</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- Hero Section -->
+  <!-- Hero Header -->
   <header>
     <h1>SNOOPFINGER Reimplementation and Evaluation</h1>
-    <div class="subtitle">An end-to-end interactive report detailing threat modeling, mathematical formulations, and obfuscation countermeasures.</div>
+    <div class="subtitle">A brutal, honest security review of the gaze-snooping threat model paired with a live, click-to-type virtual keyboard sandbox.</div>
   </header>
 
   <main>
@@ -423,7 +490,45 @@
       </p>
     </section>
 
-    <!-- Section 2: System Architecture -->
+    <!-- Section 2: Brutal Critique (Brutal and Honest Review) -->
+    <section id="critique" class="section-card alert-card">
+      <h2>Gaps and Limitations (Brutal and Honest Review)</h2>
+      <p>
+        A rigorous look at the paper reveals several theoretical over-simplifications and structural flaws. Below is a critical security assessment of the SNOOPFINGER threat model and defense boundaries:
+      </p>
+      
+      <div class="critique-section">
+        <div class="critique-box">
+          <div class="critique-title">Unrealistic Gaussian Noise Model</div>
+          <div class="critique-body">
+            The simulation framework collapses orientation errors into independent and identically distributed (i.i.d.) Gaussian coordinates. In real head/eye tracking, physical drift, postural tremors, and muscle fatigue cause highly correlated, non-i.i.d. noise over time. This flaw explains why the baseline simulation's accuracy increases with word length (the Central Limit Theorem averages out i.i.d. noise), while real-world user studies report decreasing accuracy.
+          </div>
+        </div>
+        
+        <div class="critique-box">
+          <div class="critique-title">Idealized 2D Keyboard Projection</div>
+          <div class="critique-body">
+            The model assumes a flat, normalized 2D standard QWERTY grid. In deployed HMD platforms, virtual keyboards are projected onto curved 3D surfaces. Head rotation, relative distance, and perspective distortion introduce complex coordinate projections. By ignoring spatial perspective shifts, the threat model underestimates the normalization complexity required for a successful real-world attack.
+          </div>
+        </div>
+        
+        <div class="critique-box">
+          <div class="critique-title">Lack of Utility Metrics</div>
+          <div class="critique-body">
+            The defense evaluation uses Root-Mean-Squared Error (RMSE) coordinate distortion as a proxy for utility loss. However, it fails to quantify usability impacts on legitimate HMD applications. In practice, injecting noise or quantization to protect typing privacy may degrade gaze-control accuracy, introduce rendering jitter, or cause user nausea, rendering the HMD unusable.
+          </div>
+        </div>
+        
+        <div class="critique-box">
+          <div class="critique-title">Keystroke Boundary Resolution</div>
+          <div class="critique-body">
+            The attacker-side geometry matching assumes the dictionary length of the typed word is resolved perfectly, meaning the boundaries between key strikes are cleanly demarcated. Real orientation stream processing requires resolving noisy tap events. Missing or incorrectly segmenting a single tap boundary breaks the candidate length matching and ruins the inference.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: System Architecture -->
     <section id="architecture" class="section-card">
       <h2>System Architecture Diagram</h2>
       <p>
@@ -436,8 +541,8 @@
             
             subgraph Defenses [Sensor Obfuscation]
                 D1[Inherent Measurement Noise]
-                D2[Countermeasure: Added Noise]
-                D3[Countermeasure: Coordinate Quantization]
+                D2[Added Noise]
+                D3[Coordinate Quantization]
             end
             
             D1 --> C
@@ -458,7 +563,7 @@
       </div>
     </section>
 
-    <!-- Section 3: Mathematical Model -->
+    <!-- Section 4: Mathematical Model -->
     <section id="mathematics" class="section-card">
       <h2>Mathematical Formulation</h2>
       <p>
@@ -503,11 +608,11 @@
       </div>
     </section>
 
-    <!-- Section 4: Interactive Simulation -->
+    <!-- Section 5: Live Interactive Sandbox -->
     <section id="sandbox" class="section-card">
-      <h2>Interactive Attack Simulator</h2>
+      <h2>Live Interactive Sandbox</h2>
       <p>
-        Adjust the defense sliders below to inject added noise or coordinate quantization, then simulate the SNOOPFINGER attack. The canvas plots the true keyboard keys and paths alongside the simulated noisy paths.
+        <strong>Interactive Feature:</strong> Click keys directly on the virtual keyboard to type a word, or edit the text box. The gold line shows your clean tap trace, while the dashed teal line plots the noisy path. Adjust the defense sliders to observe how signal distortion alters the attacker's accuracy in real time.
       </p>
       
       <div class="sandbox-grid">
@@ -515,7 +620,10 @@
         <div>
           <div class="control-group">
             <label for="typed-word">Word to Type (3-6 letters)</label>
-            <input type="text" id="typed-word" class="input-text" value="code" maxlength="6">
+            <input type="text" id="typed-word" class="input-text" value="code" maxlength="6" readonly>
+            <p style="font-size: 0.85rem; margin-top: 0.4rem; color: var(--color-text-muted);">
+              Type by clicking keys on the keyboard visualizer.
+            </p>
           </div>
           
           <div class="control-group">
@@ -534,7 +642,10 @@
             </div>
           </div>
           
-          <button id="simulate-btn" class="btn">Simulate Attack</button>
+          <div class="btn-group">
+            <button id="simulate-btn" class="btn">Simulate Fresh Gaze</button>
+            <button id="clear-btn" class="btn btn-clear">Clear</button>
+          </div>
         </div>
         
         <!-- Canvas & Results Column -->
@@ -583,7 +694,7 @@
       </div>
     </section>
 
-    <!-- Section 5: Findings -->
+    <!-- Section 6: Findings -->
     <section id="findings" class="section-card">
       <h2>Evaluation and Defense Findings</h2>
       <p>
@@ -676,7 +787,7 @@
         "struck", "lowest", "adults", "police", "robert", "series", "output", "boxing", "weight", "injury", "manage", "twelve", "stocks", "bishop", "luxury", "centre", "honour", "pilots", "ethics", "looked", "defend", "refuse", "create", "linked", "device", "review", "thomas", "versus", "attend", "rescue"
       ];
       
-      // QWERTY Layout
+      // QWERTY Layout with Key Sizes for Click Detection
       const LAYOUT = {};
       const row1 = "qwertyuiop";
       const row2 = "asdfghjkl";
@@ -685,6 +796,8 @@
       for (let i = 0; i < row2.length; i++) LAYOUT[row2[i]] = [i + 0.5, 1.0];
       for (let i = 0; i < row3.length; i++) LAYOUT[row3[i]] = [i + 1.0, 2.0];
       LAYOUT["enter"] = [10.5, 0.5];
+      
+      let typedSequence = ["c", "o", "d", "e"]; // default typed letters
       
       // Canvas and controls setup
       const canvas = document.getElementById("layout-canvas");
@@ -695,6 +808,7 @@
       const quantSlider = document.getElementById("quant-slider");
       const quantVal = document.getElementById("quant-val");
       const simulateBtn = document.getElementById("simulate-btn");
+      const clearBtn = document.getElementById("clear-btn");
       
       const guessesList = document.getElementById("guesses-list");
       const trueRankVal = document.getElementById("true-rank-val");
@@ -717,15 +831,17 @@
       // Sliders listeners
       noiseSlider.addEventListener("input", function() {
         noiseVal.textContent = parseFloat(noiseSlider.value).toFixed(2);
+        runSimulation();
       });
       quantSlider.addEventListener("input", function() {
         quantVal.textContent = parseFloat(quantSlider.value).toFixed(2);
+        runSimulation();
       });
       
       // Helper calculations
-      function getPoints(word) {
+      function getPoints(seq) {
         const pts = [];
-        for (let c of word) {
+        for (let c of seq) {
           if (LAYOUT[c]) pts.push(LAYOUT[c]);
         }
         pts.push(LAYOUT["enter"]);
@@ -757,25 +873,30 @@
         return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
       }
       
-      // Draw function
-      function drawKeyboard(truePts, obsPts) {
+      // Canvas coordinate map helpers
+      function getScaleAndPadding() {
         const cw = canvas.width / window.devicePixelRatio;
         const ch = canvas.height / window.devicePixelRatio;
-        
-        ctx.clearRect(0, 0, cw, ch);
-        
-        // Define margins and scale factor
         const paddingX = 40;
         const paddingY = 25;
         const scaleX = (cw - paddingX * 2) / 11;
         const scaleY = (ch - paddingY * 2) / 3;
+        return { paddingX, paddingY, scaleX, scaleY, cw, ch };
+      }
+      
+      function toScreen(pt) {
+        const { paddingX, paddingY, scaleX, scaleY } = getScaleAndPadding();
+        return [
+          paddingX + pt[0] * scaleX,
+          paddingY + pt[1] * scaleY
+        ];
+      }
+      
+      // Draw function
+      function drawKeyboard(truePts, obsPts) {
+        const { cw, ch, scaleX, scaleY } = getScaleAndPadding();
         
-        function toScreen(pt) {
-          return [
-            paddingX + pt[0] * scaleX,
-            paddingY + pt[1] * scaleY
-          ];
-        }
+        ctx.clearRect(0, 0, cw, ch);
         
         // Draw standard keys
         ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
@@ -787,74 +908,122 @@
         
         for (let k in LAYOUT) {
           const sPt = toScreen(LAYOUT[k]);
+          
+          // Draw colored highlighted state if key is in typed sequence
+          const idxInSeq = typedSequence.indexOf(k);
+          if (idxInSeq !== -1) {
+            ctx.fillStyle = "rgba(245, 166, 35, 0.12)";
+            ctx.strokeStyle = "rgba(245, 166, 35, 0.4)";
+          } else {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+          }
+          
           ctx.beginPath();
           ctx.roundRect(sPt[0] - keyW/2, sPt[1] - keyH/2, keyW, keyH, 4);
           ctx.fill();
           ctx.stroke();
           
           // Draw letter text
-          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.fillStyle = idxInSeq !== -1 ? "#f5a623" : "rgba(255, 255, 255, 0.45)";
           ctx.font = "bold 11px Inter";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(k.toUpperCase(), sPt[0], sPt[1]);
         }
         
-        // Draw True Path
-        ctx.beginPath();
-        for (let i = 0; i < truePts.length; i++) {
-          const sPt = toScreen(truePts[i]);
-          if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
-          else ctx.lineTo(sPt[0], sPt[1]);
-        }
-        ctx.strokeStyle = "#f5a623";
-        ctx.lineWidth = 3;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        
-        // Draw observed path
-        ctx.beginPath();
-        for (let i = 0; i < obsPts.length; i++) {
-          const sPt = toScreen(obsPts[i]);
-          if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
-          else ctx.lineTo(sPt[0], sPt[1]);
-        }
-        ctx.strokeStyle = "#2da8a0";
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([5, 5]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // Draw points nodes
-        for (let i = 0; i < truePts.length; i++) {
-          const sPt = toScreen(truePts[i]);
+        // Only draw paths if there are keys clicked
+        if (truePts.length > 1) {
+          // Draw True Path
           ctx.beginPath();
-          ctx.arc(sPt[0], sPt[1], 5, 0, 2*Math.PI);
-          ctx.fillStyle = "#f5a623";
-          ctx.fill();
-        }
-        
-        for (let i = 0; i < obsPts.length; i++) {
-          const sPt = toScreen(obsPts[i]);
+          for (let i = 0; i < truePts.length; i++) {
+            const sPt = toScreen(truePts[i]);
+            if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
+            else ctx.lineTo(sPt[0], sPt[1]);
+          }
+          ctx.strokeStyle = "#f5a623";
+          ctx.lineWidth = 3;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+          
+          // Draw observed path
           ctx.beginPath();
-          ctx.arc(sPt[0], sPt[1], 4, 0, 2*Math.PI);
-          ctx.fillStyle = "#2da8a0";
-          ctx.fill();
+          for (let i = 0; i < obsPts.length; i++) {
+            const sPt = toScreen(obsPts[i]);
+            if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
+            else ctx.lineTo(sPt[0], sPt[1]);
+          }
+          ctx.strokeStyle = "#2da8a0";
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Draw points nodes
+          for (let i = 0; i < truePts.length; i++) {
+            const sPt = toScreen(truePts[i]);
+            ctx.beginPath();
+            ctx.arc(sPt[0], sPt[1], 5, 0, 2*Math.PI);
+            ctx.fillStyle = "#f5a623";
+            ctx.fill();
+          }
+          
+          for (let i = 0; i < obsPts.length; i++) {
+            const sPt = toScreen(obsPts[i]);
+            ctx.beginPath();
+            ctx.arc(sPt[0], sPt[1], 4, 0, 2*Math.PI);
+            ctx.fillStyle = "#2da8a0";
+            ctx.fill();
+          }
         }
       }
       
-      function runSimulation() {
-        const rawWord = wordInput.value.trim().toLowerCase();
+      // Click key detection logic
+      canvas.addEventListener("click", function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
         
-        // Validation
-        if (!/^[a-z]+$/.test(rawWord) || rawWord.length < 3 || rawWord.length > 6) {
-          alert("Please type a valid English word (3 to 6 letters, alphabet only).");
+        const { scaleX, scaleY } = getScaleAndPadding();
+        const keyW = scaleX * 0.8;
+        const keyH = scaleY * 0.8;
+        
+        // Find if user clicked on any key
+        for (let k in LAYOUT) {
+          const sPt = toScreen(LAYOUT[k]);
+          if (mouseX >= sPt[0] - keyW/2 && mouseX <= sPt[0] + keyW/2 &&
+              mouseY >= sPt[1] - keyH/2 && mouseY <= sPt[1] + keyH/2) {
+            
+            // Limit to 6 letters max for SNOOPFINGER candidate matching
+            if (typedSequence.length < 6) {
+              typedSequence.push(k);
+              wordInput.value = typedSequence.join("").toUpperCase();
+              runSimulation();
+            }
+            break;
+          }
+        }
+      });
+      
+      clearBtn.addEventListener("click", function() {
+        typedSequence = [];
+        wordInput.value = "";
+        runSimulation();
+      });
+      
+      function runSimulation() {
+        const rawWord = typedSequence.join("");
+        
+        if (typedSequence.length === 0) {
+          drawKeyboard([], []);
+          guessesList.innerHTML = "<li>Type a word on the keyboard</li>";
+          trueRankVal.textContent = "-";
+          candidatesCount.textContent = "0";
           return;
         }
         
         // Ensure word is in dictionary for simulation
         if (!DICTIONARY.includes(rawWord)) {
-          // Temporarily append so the attacker has it in the dictionary
           DICTIONARY.push(rawWord);
         }
         
@@ -866,7 +1035,7 @@
         const L = rawWord.length;
         
         // 1. Simulate victim points
-        const truePts = getPoints(rawWord);
+        const truePts = getPoints(typedSequence);
         const obsPts = truePts.map(pt => {
           let nx = pt[0] + randomNormal() * noiseStd;
           let ny = pt[1] + randomNormal() * noiseStd;
@@ -885,7 +1054,7 @@
         
         // Scoring
         const scored = candidates.map(w => {
-          const candPts = getPoints(w);
+          const candPts = getPoints(w.split(""));
           const candGeom = getGeometry(candPts);
           let score = 0;
           for (let i = 0; i < L; i++) {
@@ -899,7 +1068,7 @@
         scored.sort((a, b) => a.score - b.score);
         
         const rank = scored.findIndex(item => item.word === rawWord);
-        trueRankVal.textContent = rank + 1; // 1-based display rank
+        trueRankVal.textContent = rank !== -1 ? rank + 1 : "-";
         
         // Render TopGuesses
         guessesList.innerHTML = "";
