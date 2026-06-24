@@ -417,7 +417,7 @@
       background-color: rgba(255, 255, 255, 0.01);
     }
     
-    /* Brutal Review Styles */
+    /* Explanation Section Styles */
     .critique-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -432,8 +432,8 @@
     }
     
     .critique-box {
-      background-color: rgba(239, 68, 68, 0.02);
-      border: 1px solid rgba(239, 68, 68, 0.15);
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 1.5rem;
     }
@@ -441,7 +441,7 @@
     .critique-title {
       font-size: 1.1rem;
       font-weight: 600;
-      color: #f87171;
+      color: var(--color-primary);
       margin-bottom: 0.75rem;
       display: flex;
       align-items: center;
@@ -459,10 +459,10 @@
   <!-- Navigation Bar -->
   <nav>
     <div class="nav-container">
-      <a href="#" class="nav-brand">SNOOPFINGER CRITIQUE & SANDBOX</a>
+      <a href="#" class="nav-brand">SNOOPFINGER EXPLANATION & SANDBOX</a>
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#critique">Brutal Critique</a></li>
+        <li><a href="#critique">Explanation</a></li>
         <li><a href="#architecture">Architecture</a></li>
         <li><a href="#mathematics">Mathematics</a></li>
         <li><a href="#sandbox">Live Sandbox</a></li>
@@ -474,7 +474,7 @@
   <!-- Hero Header -->
   <header>
     <h1>SNOOPFINGER Reimplementation and Evaluation</h1>
-    <div class="subtitle">A brutal, honest security review of the gaze-snooping threat model paired with a live, click-to-type virtual keyboard sandbox.</div>
+    <div class="subtitle">A detailed explanation of the gaze-snooping threat model and defenses paired with a live, interactive virtual keyboard sandbox.</div>
   </header>
 
   <main>
@@ -490,39 +490,39 @@
       </p>
     </section>
 
-    <!-- Section 2: Brutal Critique (Brutal and Honest Review) -->
-    <section id="critique" class="section-card alert-card">
-      <h2>Gaps and Limitations (Brutal and Honest Review)</h2>
+    <!-- Section 2: Project Explanation -->
+    <section id="critique" class="section-card">
+      <h2>Project Explanation and Limitations</h2>
       <p>
-        A rigorous look at the paper reveals several theoretical over-simplifications and structural flaws. Below is a critical security assessment of the SNOOPFINGER threat model and defense boundaries:
+        A rigorous look at the paper reveals several key design parameters and core constraints. Below is a detailed technical assessment of the SNOOPFINGER threat model and defense boundaries:
       </p>
       
       <div class="critique-section">
         <div class="critique-box">
-          <div class="critique-title">Unrealistic Gaussian Noise Model</div>
+          <div class="critique-title">Noise Model Assumptions</div>
           <div class="critique-body">
-            The simulation framework collapses orientation errors into independent and identically distributed (i.i.d.) Gaussian coordinates. In real head/eye tracking, physical drift, postural tremors, and muscle fatigue cause highly correlated, non-i.i.d. noise over time. This flaw explains why the baseline simulation's accuracy increases with word length (the Central Limit Theorem averages out i.i.d. noise), while real-world user studies report decreasing accuracy.
+            The simulation framework represents orientation errors as Gaussian coordinates. In real HMD tracking, physiological drift, tremors, and muscle fatigue introduce correlated, non-i.i.d. noise over time. This explains why the baseline simulation's accuracy increases with word length (the Central Limit Theorem averages out random noise), whereas physical user studies report a decreasing trend.
           </div>
         </div>
         
         <div class="critique-box">
-          <div class="critique-title">Idealized 2D Keyboard Projection</div>
+          <div class="critique-title">2D Keyboard Projection</div>
           <div class="critique-body">
-            The model assumes a flat, normalized 2D standard QWERTY grid. In deployed HMD platforms, virtual keyboards are projected onto curved 3D surfaces. Head rotation, relative distance, and perspective distortion introduce complex coordinate projections. By ignoring spatial perspective shifts, the threat model underestimates the normalization complexity required for a successful real-world attack.
+            The model utilizes a simplified, flat 2D standard QWERTY grid. Deployed HMD platforms project virtual keyboards on curved 3D surfaces. Head rotation, relative distance, and perspective distortion introduce geometric shifts. A flat coordinate model simplifies the coordinate extraction process for tracking simulations.
           </div>
         </div>
         
         <div class="critique-box">
-          <div class="critique-title">Lack of Utility Metrics</div>
+          <div class="critique-title">Utility and Distortion Metrics</div>
           <div class="critique-body">
-            The defense evaluation uses Root-Mean-Squared Error (RMSE) coordinate distortion as a proxy for utility loss. However, it fails to quantify usability impacts on legitimate HMD applications. In practice, injecting noise or quantization to protect typing privacy may degrade gaze-control accuracy, introduce rendering jitter, or cause user nausea, rendering the HMD unusable.
+            The defense evaluation uses Root-Mean-Squared Error (RMSE) coordinate distortion as a proxy for utility loss. In practice, injecting obfuscation to protect keyboard entry privacy must balance readability and tracking latency to prevent user nausea or eye fatigue on HMD platforms.
           </div>
         </div>
         
         <div class="critique-box">
-          <div class="critique-title">Keystroke Boundary Resolution</div>
+          <div class="critique-title">Tap Boundary Demarcation</div>
           <div class="critique-body">
-            The attacker-side geometry matching assumes the dictionary length of the typed word is resolved perfectly, meaning the boundaries between key strikes are cleanly demarcated. Real orientation stream processing requires resolving noisy tap events. Missing or incorrectly segmenting a single tap boundary breaks the candidate length matching and ruins the inference.
+            The candidate geometry matching assumes the dictionary length of the typed word is resolved perfectly, meaning keystroke tap boundaries are cleanly separated. Real orientation stream processing requires resolving tap boundaries under noisy taps, which adds boundary segmentation complexity.
           </div>
         </div>
       </div>
@@ -620,9 +620,9 @@
         <div>
           <div class="control-group">
             <label for="typed-word">Word to Type (3-6 letters)</label>
-            <input type="text" id="typed-word" class="input-text" value="code" maxlength="6" readonly>
+            <input type="text" id="typed-word" class="input-text" value="CODE" maxlength="6">
             <p style="font-size: 0.85rem; margin-top: 0.4rem; color: var(--color-text-muted);">
-              Type by clicking keys on the keyboard visualizer.
+              Type directly in the text box above, or click keys on the keyboard visualizer.
             </p>
           </div>
           
@@ -835,6 +835,15 @@
       });
       quantSlider.addEventListener("input", function() {
         quantVal.textContent = parseFloat(quantSlider.value).toFixed(2);
+        runSimulation();
+      });
+      
+      // Text input listener
+      wordInput.addEventListener("input", function() {
+        const val = wordInput.value.trim().toLowerCase().slice(0, 6);
+        const cleaned = val.replace(/[^a-z]/g, "");
+        typedSequence = cleaned.split("");
+        wordInput.value = cleaned.toUpperCase();
         runSimulation();
       });
       
