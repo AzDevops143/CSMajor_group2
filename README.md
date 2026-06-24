@@ -8,6 +8,48 @@ It serves as a measurement harness to evaluate "Adaptive Sensor Data Obfuscation
 
 ---
 
+## Architecture Diagram
+
+```mermaid
+graph TD
+    A[Victim Typed Word] --> B[True Key Center Coordinates]
+    B --> C[simulate_observed_points]
+    
+    subgraph Defenses [Adaptive Sensor Data Obfuscation]
+        D1[Inherent Measurement Noise]
+        D2[Countermeasure: Added Noise]
+        D3[Countermeasure: Coordinate Quantization]
+    end
+    
+    D1 --> C
+    D2 --> C
+    D3 --> C
+    C --> E[Noisy Observed Gaze Points]
+    
+    E --> F[consecutive_geometry]
+    F --> G[Observed Relative Distances and Angles]
+    
+    H[Candidate Dictionary] --> I[precompute_candidate_cache]
+    I --> J[Clean Candidate Geometries]
+    
+    G --> K[rank_candidates]
+    J --> K
+    K --> L[Geometric Matching and Ranking]
+    L --> M[Sorted Candidate List]
+    
+    subgraph Execution Modules
+        N1[baseline_eval.py - Baseline Validation]
+        N2[countermeasure_eval.py - Privacy/Utility Sweeps]
+        N3[demo.py - Live Attack Demo]
+    end
+    
+    M --> N1
+    M --> N2
+    M --> N3
+```
+
+---
+
 ## Repository Files
 
 * **snoopfinger_core.py**: Keyboard layout configuration, dictionary compilation, and candidate-ranking logic.
