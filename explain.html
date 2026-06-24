@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNOOPFINGER Reimplementation and Countermeasure Evaluation</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  
+  <!-- Custom Styles -->
+  <style>
+    :root {
+      --bg-base: #0b0f19;
+      --bg-surface: #151d30;
+      --bg-card: #1f2a44;
+      --border-color: #2e3d60;
+      
+      --color-primary: #f5a623;    /* Amber/Gold */
+      --color-secondary: #2da8a0;  /* Teal */
+      --color-text-main: #f3f4f6;
+      --color-text-muted: #9ca3af;
+      --color-accent-blue: #3b82f6;
+      --color-accent-green: #10b981;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--color-text-main);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+    
+    header {
+      max-width: 1400px;
+      margin: 0 auto 2.5rem auto;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+    }
+    
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .section-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--color-text-main);
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--color-secondary);
+      padding-left: 0.75rem;
+    }
+    
+    p {
+      color: var(--color-text-muted);
+      margin-bottom: 1rem;
+    }
+    
+    .math-block {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      border: 1px dashed var(--border-color);
+    }
+    
+    .mermaid {
+      background-color: var(--bg-card) !important;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border-color);
+    }
+    
+    /* Interactive Simulator CSS */
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-main);
+      margin-bottom: 0.5rem;
+    }
+    
+    .input-text {
+      width: 100%;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      color: var(--color-text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .input-text:focus {
+      border-color: var(--color-secondary);
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .slider {
+      flex-grow: 1;
+      accent-color: var(--color-secondary);
+    }
+    
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      width: 50px;
+      text-align: right;
+      font-weight: 500;
+    }
+    
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--color-secondary), #248a83);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.85rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 1rem;
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+    }
+    
+    .btn:active {
+      transform: scale(0.98);
+    }
+    
+    .canvas-container {
+      margin-top: 2rem;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2.2 / 1;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .results-panel {
+      margin-top: 2rem;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 1.5rem;
+    }
+    
+    .ranks-list {
+      list-style: none;
+    }
+    
+    .ranks-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+    }
+    
+    .ranks-list li.correct {
+      background-color: rgba(45, 168, 160, 0.15);
+      border: 1px solid var(--color-secondary);
+      font-weight: 600;
+    }
+    
+    .ranks-list li.other {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    .stat-box {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .stat-val {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .stat-lbl {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+    
+    /* Key color indicators */
+    .indicators {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+    
+    .indicator-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .ind-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>SNOOPFINGER Reimplementation and Evaluation</h1>
+    <div class="subtitle">Interactive mathematical and simulated demonstration of the side-channel attack and countermeasures</div>
+  </header>
+
+  <div class="container">
+    
+    <!-- LEFT SIDE: Theory & Math & Architecture -->
+    <div class="section-card">
+      <h2>Underlying Mathematical Model</h2>
+      
+      <p>
+        The SNOOPFINGER attack works by comparing the relative geometry of consecutive orientations (distances and angles) observed in the victim's gaze points to the candidate word geometry of standard dictionary words.
+      </p>
+      
+      <p>
+        The keyboard consists of standard key coordinates represented as:
+      </p>
+      <div class="math-block">
+        \[ K_c = (x_c, y_c) \]
+      </div>
+
+      <p>
+        For a typed word \(w\), the victim's raw key center points are perturbed by Gaussian noise representing measurement uncertainty:
+      </p>
+      <div class="math-block">
+        \[ P_i = K_{w_i} + \mathcal{N}(0, \sigma^2) \]
+      </div>
+
+      <p>
+        Under the coordinate quantization countermeasure of step size \(q\), the coordinates are rounded:
+      </p>
+      <div class="math-block">
+        \[ P'_i = \text{round}\left(\frac{P_i}{q}\right) \times q \]
+      </div>
+
+      <p>
+        The observed relative geometry is extracted from consecutive points:
+      </p>
+      <div class="math-block">
+        \[ \vec{v}_i = P_{i+1} - P_i \implies d_i = \|\vec{v}_i\|_2, \quad \theta_i = \text{arctan2}(\Delta y_i, \Delta x_i) \]
+      </div>
+
+      <p>
+        The attacker scores each same-length candidate word \(w_{cand}\) by computing the sum of squared deviations in consecutive distances and circularly wrapped angles:
+      </p>
+      <div class="math-block">
+        \[ S(w_{cand}) = \sum_{i=1}^{L} \left( (d_{cand, i} - d_{obs, i})^2 + \left(\frac{\Delta\theta_i}{180}\right)^2 \right) \]
+      </div>
+      
+      <p>
+        Where \(\Delta\theta_i\) is the circular difference wrapping bounds:
+      </p>
+      <div class="math-block">
+        \[ \Delta\theta_i = (\theta_{cand, i} - \theta_{obs, i} + 180)^\circ \pmod{360} - 180^\circ \]
+      </div>
+
+      <h2 style="margin-top: 2rem;">Attack and Defense Architecture</h2>
+      <div class="mermaid">
+        graph TD
+            A[Victim Typed Word] --> B[True Key Center Coordinates]
+            B --> C[simulate_observed_points]
+            
+            subgraph Defenses [Sensor Obfuscation]
+                D1[Inherent Measurement Noise]
+                D2[Added Noise]
+                D3[Coordinate Quantization]
+            end
+            
+            D1 --> C
+            D2 --> C
+            D3 --> C
+            C --> E[Noisy Gaze Points]
+            
+            E --> F[consecutive_geometry]
+            F --> G[Observed Relative Geometry]
+            
+            H[Candidate Dictionary] --> I[precompute_candidate_cache]
+            I --> J[Clean Candidate Geometries]
+            
+            G --> K[rank_candidates]
+            J --> K
+            K --> L[Geometric Matching and Ranking]
+            L --> M[Sorted Candidate List]
+      </div>
+    </div>
+    
+    <!-- RIGHT SIDE: Interactive Sandbox -->
+    <div class="section-card">
+      <h2>Interactive Attack Simulator</h2>
+      <p>
+        Type a 3-6 letter English word, configure the obfuscation strengths, and watch SNOOPFINGER try to guess the typed word in real-time.
+      </p>
+      
+      <div class="control-group">
+        <label for="typed-word">Word to Type (3-6 letters)</label>
+        <input type="text" id="typed-word" class="input-text" value="code" maxlength="6">
+      </div>
+      
+      <div class="control-group">
+        <label for="noise-slider">Added Defense Noise (std dev in key-width units)</label>
+        <div class="slider-container">
+          <input type="range" id="noise-slider" class="slider" min="0" max="1.5" step="0.05" value="0.0">
+          <span id="noise-val" class="slider-val">0.00</span>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label for="quant-slider">Quantization Step Size (0.00 = OFF)</label>
+        <div class="slider-container">
+          <input type="range" id="quant-slider" class="slider" min="0" max="2.0" step="0.1" value="0.0">
+          <span id="quant-val" class="slider-val">0.00</span>
+        </div>
+      </div>
+      
+      <button id="simulate-btn" class="btn">Simulate Attack</button>
+      
+      <div class="canvas-container">
+        <canvas id="layout-canvas"></canvas>
+      </div>
+      
+      <div class="indicators">
+        <div class="indicator-item">
+          <div class="ind-color" style="background-color: #f5a623;"></div>
+          <span>True Path</span>
+        </div>
+        <div class="indicator-item">
+          <div class="ind-color" style="background-color: #2da8a0;"></div>
+          <span>Noisy Gaze Path</span>
+        </div>
+        <div class="indicator-item">
+          <div class="ind-color" style="background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);"></div>
+          <span>Keyboard Keys</span>
+        </div>
+      </div>
+      
+      <div class="results-panel">
+        <div class="results-grid">
+          <div>
+            <label style="margin-bottom: 0.75rem;">Attacker Top-8 Guesses</label>
+            <ul id="guesses-list" class="ranks-list">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="stat-box">
+              <span id="true-rank-val" class="stat-val">1</span>
+              <span class="stat-lbl">True Word Rank</span>
+            </div>
+            <div class="stat-box">
+              <span id="candidates-count" class="stat-val">768</span>
+              <span class="stat-lbl">Candidate Pool</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- KaTeX Auto-render -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  
+  <!-- Mermaid Module -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+  
+  <!-- Simulator Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Render LaTeX
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '\\[', right: '\\[', display: true}
+        ]
+      });
+      
+      // Hardcoded Dictionary
+      const DICTIONARY = [
+        "lay", "fun", "fbi", "him", "man", "sue", "god", "fee", "mps", "may", "fox", "box", "die", "tie", "dna", "bow", "cow", "row", "cia", "via",
+        "alan", "code", "year", "hard", "tips", "hang", "free", "wall", "seen", "gary", "ford", "dawn", "mall", "july", "took", "tool", "runs", "near", "rose", "core", "wise", "flew", "does", "road", "size", "else", "dose", "glad",
+        "taxes", "least", "loyal", "moral", "share", "photo", "shell", "idiot", "jimmy", "local", "third", "marks", "twist", "costa", "fleet", "angle", "point", "ghost", "threat", "slave", "space", "boats", "spend", "spare", "roads", "sizes", "hands", "bands", "sized", "boxes", "shade", "wrote", "guard",
+        "struck", "lowest", "adults", "police", "robert", "series", "output", "boxing", "weight", "injury", "manage", "twelve", "stocks", "bishop", "luxury", "centre", "honour", "pilots", "ethics", "looked", "defend", "refuse", "create", "linked", "device", "review", "thomas", "versus", "attend", "rescue"
+      ];
+      
+      // QWERTY Layout
+      const LAYOUT = {};
+      const row1 = "qwertyuiop";
+      const row2 = "asdfghjkl";
+      const row3 = "zxcvbnm";
+      for (let i = 0; i < row1.length; i++) LAYOUT[row1[i]] = [i, 0.0];
+      for (let i = 0; i < row2.length; i++) LAYOUT[row2[i]] = [i + 0.5, 1.0];
+      for (let i = 0; i < row3.length; i++) LAYOUT[row3[i]] = [i + 1.0, 2.0];
+      LAYOUT["enter"] = [10.5, 0.5];
+      
+      // Canvas and controls setup
+      const canvas = document.getElementById("layout-canvas");
+      const ctx = canvas.getContext("2d");
+      const wordInput = document.getElementById("typed-word");
+      const noiseSlider = document.getElementById("noise-slider");
+      const noiseVal = document.getElementById("noise-val");
+      const quantSlider = document.getElementById("quant-slider");
+      const quantVal = document.getElementById("quant-val");
+      const simulateBtn = document.getElementById("simulate-btn");
+      
+      const guessesList = document.getElementById("guesses-list");
+      const trueRankVal = document.getElementById("true-rank-val");
+      const candidatesCount = document.getElementById("candidates-count");
+      
+      // Resize canvas relative to its container
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+      
+      resizeCanvas();
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        runSimulation();
+      });
+      
+      // Sliders listeners
+      noiseSlider.addEventListener("input", function() {
+        noiseVal.textContent = parseFloat(noiseSlider.value).toFixed(2);
+      });
+      quantSlider.addEventListener("input", function() {
+        quantVal.textContent = parseFloat(quantSlider.value).toFixed(2);
+      });
+      
+      // Helper calculations
+      function getPoints(word) {
+        const pts = [];
+        for (let c of word) {
+          if (LAYOUT[c]) pts.push(LAYOUT[c]);
+        }
+        pts.push(LAYOUT["enter"]);
+        return pts;
+      }
+      
+      function getGeometry(points) {
+        const dists = [];
+        const angles = [];
+        for (let i = 0; i < points.length - 1; i++) {
+          const dx = points[i+1][0] - points[i][0];
+          const dy = points[i+1][1] - points[i][1];
+          dists.push(Math.sqrt(dx*dx + dy*dy));
+          angles.push(Math.atan2(dy, dx) * 180 / Math.PI);
+        }
+        return { dists, angles };
+      }
+      
+      function circularDiff(a, b) {
+        let d = a - b;
+        return ((d + 180) % 360 + 360) % 360 - 180;
+      }
+      
+      // Generate box-muller normal noise
+      function randomNormal() {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      }
+      
+      // Draw function
+      function drawKeyboard(truePts, obsPts) {
+        const cw = canvas.width / window.devicePixelRatio;
+        const ch = canvas.height / window.devicePixelRatio;
+        
+        ctx.clearRect(0, 0, cw, ch);
+        
+        // Define margins and scale factor
+        const paddingX = 40;
+        const paddingY = 25;
+        const scaleX = (cw - paddingX * 2) / 11;
+        const scaleY = (ch - paddingY * 2) / 3;
+        
+        function toScreen(pt) {
+          return [
+            paddingX + pt[0] * scaleX,
+            paddingY + pt[1] * scaleY
+          ];
+        }
+        
+        // Draw standard keys
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.lineWidth = 1;
+        
+        const keyW = scaleX * 0.8;
+        const keyH = scaleY * 0.8;
+        
+        for (let k in LAYOUT) {
+          const sPt = toScreen(LAYOUT[k]);
+          ctx.beginPath();
+          ctx.roundRect(sPt[0] - keyW/2, sPt[1] - keyH/2, keyW, keyH, 4);
+          ctx.fill();
+          ctx.stroke();
+          
+          // Draw letter text
+          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.font = "bold 11px Inter";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(k.toUpperCase(), sPt[0], sPt[1]);
+        }
+        
+        // Draw True Path
+        ctx.beginPath();
+        for (let i = 0; i < truePts.length; i++) {
+          const sPt = toScreen(truePts[i]);
+          if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
+          else ctx.lineTo(sPt[0], sPt[1]);
+        }
+        ctx.strokeStyle = "#f5a623";
+        ctx.lineWidth = 3;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        
+        // Draw observed path
+        ctx.beginPath();
+        for (let i = 0; i < obsPts.length; i++) {
+          const sPt = toScreen(obsPts[i]);
+          if (i === 0) ctx.moveTo(sPt[0], sPt[1]);
+          else ctx.lineTo(sPt[0], sPt[1]);
+        }
+        ctx.strokeStyle = "#2da8a0";
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Draw points nodes
+        for (let i = 0; i < truePts.length; i++) {
+          const sPt = toScreen(truePts[i]);
+          ctx.beginPath();
+          ctx.arc(sPt[0], sPt[1], 5, 0, 2*Math.PI);
+          ctx.fillStyle = "#f5a623";
+          ctx.fill();
+        }
+        
+        for (let i = 0; i < obsPts.length; i++) {
+          const sPt = toScreen(obsPts[i]);
+          ctx.beginPath();
+          ctx.arc(sPt[0], sPt[1], 4, 0, 2*Math.PI);
+          ctx.fillStyle = "#2da8a0";
+          ctx.fill();
+        }
+      }
+      
+      function runSimulation() {
+        const rawWord = wordInput.value.trim().toLowerCase();
+        
+        // Validation
+        if (!/^[a-z]+$/.test(rawWord) || rawWord.length < 3 || rawWord.length > 6) {
+          alert("Please type a valid English word (3 to 6 letters, alphabet only).");
+          return;
+        }
+        
+        // Ensure word is in dictionary for simulation
+        if (!DICTIONARY.includes(rawWord)) {
+          // Temporarily append so the attacker has it in the dictionary
+          DICTIONARY.push(rawWord);
+        }
+        
+        const addedNoise = parseFloat(noiseSlider.value);
+        const inherentNoise = 0.40; // baseline noise
+        const noiseStd = Math.sqrt(inherentNoise*inherentNoise + addedNoise*addedNoise);
+        const quantStep = parseFloat(quantSlider.value);
+        
+        const L = rawWord.length;
+        
+        // 1. Simulate victim points
+        const truePts = getPoints(rawWord);
+        const obsPts = truePts.map(pt => {
+          let nx = pt[0] + randomNormal() * noiseStd;
+          let ny = pt[1] + randomNormal() * noiseStd;
+          if (quantStep > 0) {
+            nx = Math.round(nx / quantStep) * quantStep;
+            ny = Math.round(ny / quantStep) * quantStep;
+          }
+          return [nx, ny];
+        });
+        
+        const obsGeom = getGeometry(obsPts);
+        
+        // Filter candidate dictionary
+        const candidates = DICTIONARY.filter(w => w.length === L);
+        candidatesCount.textContent = candidates.length;
+        
+        // Scoring
+        const scored = candidates.map(w => {
+          const candPts = getPoints(w);
+          const candGeom = getGeometry(candPts);
+          let score = 0;
+          for (let i = 0; i < L; i++) {
+            const dErr = Math.pow(candGeom.dists[i] - obsGeom.dists[i], 2);
+            const aErr = Math.pow(circularDiff(candGeom.angles[i], obsGeom.angles[i]) / 180, 2);
+            score += dErr + aErr;
+          }
+          return { word: w, score };
+        });
+        
+        scored.sort((a, b) => a.score - b.score);
+        
+        const rank = scored.findIndex(item => item.word === rawWord);
+        trueRankVal.textContent = rank + 1; // 1-based display rank
+        
+        // Render Top-8
+        guessesList.innerHTML = "";
+        const topGuesses = scored.slice(0, 8);
+        
+        let correctShown = false;
+        topGuesses.forEach((guess, idx) => {
+          const li = document.createElement("li");
+          const isCorrect = (guess.word === rawWord);
+          if (isCorrect) correctShown = true;
+          li.className = isCorrect ? "correct" : "other";
+          
+          li.innerHTML = `
+            <span>${idx + 1}. ${guess.word.toUpperCase()}</span>
+            <span>${guess.score.toFixed(3)}</span>
+          `;
+          guessesList.appendChild(li);
+        });
+        
+        // If correct word is outside Top-8, append it at the end
+        if (!correctShown && rank >= 8) {
+          const sep = document.createElement("li");
+          sep.textContent = "...";
+          sep.style.textAlign = "center";
+          sep.style.color = "var(--color-text-muted)";
+          guessesList.appendChild(sep);
+          
+          const li = document.createElement("li");
+          li.className = "correct";
+          li.innerHTML = `
+            <span>${rank + 1}. ${rawWord.toUpperCase()}</span>
+            <span>${scored[rank].score.toFixed(3)}</span>
+          `;
+          guessesList.appendChild(li);
+        }
+        
+        // Visuals
+        drawKeyboard(truePts, obsPts);
+      }
+      
+      // Simulate button click
+      simulateBtn.addEventListener("click", runSimulation);
+      
+      // Run initial simulation
+      runSimulation();
+    });
+  </script>
+</body>
+</html>
