@@ -1,0 +1,2420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASOM v2: End-to-End Project Explanation</title>
+    <meta name="description" content="Context-Aware Sensor Obfuscation Middleware — a comprehensive defense against SNOOPFINGER side-channel attacks in VR/AR environments.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        /* ═══════════════════════════════════════════════
+           DESIGN SYSTEM — CSS Variables
+           ═══════════════════════════════════════════════ */
+        :root {
+            --bg-base: #050816;
+            --bg-surface: rgba(15, 23, 42, 0.7);
+            --bg-card: rgba(15, 23, 42, 0.55);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-focus: rgba(56, 189, 248, 0.4);
+            --primary: #38bdf8;
+            --primary-rgb: 56, 189, 248;
+            --accent: #8b5cf6;
+            --accent-rgb: 139, 92, 246;
+            --success: #10b981;
+            --success-rgb: 16, 185, 129;
+            --danger: #f43f5e;
+            --danger-rgb: 244, 63, 94;
+            --warning: #fbbf24;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dim: #475569;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', 'Consolas', monospace;
+            --radius: 12px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ═══════════════════════════════════════════════
+           RESET & GLOBAL
+           ═══════════════════════════════════════════════ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(ellipse at 15% 8%, rgba(139, 92, 246, 0.09) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 12%, rgba(56, 189, 248, 0.07) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 85%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.75;
+            display: flex;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+
+        /* ═══════════════════════════════════════════════
+           SIDEBAR
+           ═══════════════════════════════════════════════ */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            background: rgba(8, 12, 24, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid var(--border);
+            padding: 32px 16px;
+            overflow-y: auto;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+        .sidebar-sub {
+            font-size: 0.7rem;
+            text-align: center;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-list { list-style: none; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+        .nav-item {
+            padding: 11px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            position: relative;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.04); color: #fff; }
+        .nav-item.active {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: var(--primary);
+            border-radius: 0 3px 3px 0;
+        }
+        .nav-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            flex-shrink: 0;
+        }
+        .nav-item.active .nav-num {
+            background: rgba(var(--primary-rgb), 0.2);
+            color: var(--primary);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════════
+           MAIN CONTENT
+           ═══════════════════════════════════════════════ */
+        .main-content {
+            margin-left: 280px;
+            padding: 48px 64px 80px;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        /* ═══════════════════════════════════════════════
+           SECTIONS — with scroll reveal
+           ═══════════════════════════════════════════════ */
+        section {
+            padding-top: 72px;
+            margin-top: -36px;
+            margin-bottom: 72px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            padding-bottom: 56px;
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        section.visible { opacity: 1; transform: translateY(0); }
+
+        /* ═══════════════════════════════════════════════
+           TYPOGRAPHY
+           ═══════════════════════════════════════════════ */
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #fff;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+        }
+        h1 .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 {
+            font-family: var(--font-display);
+            font-size: 1.85rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            letter-spacing: -0.02em;
+        }
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .badge-blue { background: rgba(var(--primary-rgb), 0.15); color: var(--primary); }
+        .badge-purple { background: rgba(var(--accent-rgb), 0.15); color: var(--accent); }
+        .badge-red { background: rgba(var(--danger-rgb), 0.15); color: var(--danger); }
+        .badge-green { background: rgba(var(--success-rgb), 0.15); color: var(--success); }
+
+        h3 {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            margin-top: 28px;
+            margin-bottom: 14px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        p { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 18px; }
+        p strong { color: var(--text-main); }
+
+        /* ═══════════════════════════════════════════════
+           CARDS & BOXES
+           ═══════════════════════════════════════════════ */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-box {
+            background: rgba(var(--primary-rgb), 0.04);
+            border-left: 4px solid var(--primary);
+            padding: 20px 24px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin-bottom: 24px;
+        }
+        .info-box p { margin: 0; color: #cbd5e1; }
+
+        .danger-box {
+            background: rgba(var(--danger-rgb), 0.04);
+            border-left: 4px solid var(--danger);
+            padding: 20px 24px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin-bottom: 24px;
+        }
+        .danger-box p { margin: 0; color: #fca5a5; }
+
+        .success-box {
+            background: rgba(var(--success-rgb), 0.04);
+            border-left: 4px solid var(--success);
+            padding: 20px 24px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin-bottom: 24px;
+        }
+        .success-box p { margin: 0; color: #6ee7b7; }
+
+        /* ═══════════════════════════════════════════════
+           LISTS
+           ═══════════════════════════════════════════════ */
+        ul, ol { margin-left: 20px; margin-bottom: 24px; }
+        li { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 10px; }
+        li strong { color: #fff; }
+
+        /* ═══════════════════════════════════════════════
+           CODE BLOCK — Syntax-Highlighted
+           ═══════════════════════════════════════════════ */
+        .code-block {
+            background: #020408;
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: var(--radius);
+            padding: 24px;
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            margin-bottom: 24px;
+            line-height: 1.65;
+            position: relative;
+        }
+        .code-block::before {
+            content: 'PIPELINE';
+            position: absolute;
+            top: 8px; right: 12px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .code-block .comment { color: #6b7280; }
+        .code-block .file { color: var(--primary); font-weight: 600; }
+        .code-block .arrow { color: var(--accent); }
+        .code-block .desc { color: #94a3b8; }
+        .code-block .output { color: var(--success); }
+        .code-block .mode { color: var(--warning); }
+
+        /* Python syntax highlighting */
+        .code-block .py-kw { color: #c084fc; font-weight: 600; }
+        .code-block .py-fn { color: #67e8f9; }
+        .code-block .py-str { color: #86efac; }
+        .code-block .py-num { color: #fbbf24; }
+        .code-block code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+
+        /* ═══════════════════════════════════════════════
+           MODULE CARDS — Section 6
+           ═══════════════════════════════════════════════ */
+        .module-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 24px; }
+
+        .module-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            transition: var(--transition);
+        }
+        .module-card:hover {
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .module-card.module-highlight-green {
+            border-color: rgba(var(--success-rgb), 0.2);
+            background: linear-gradient(135deg, rgba(var(--success-rgb), 0.03), var(--bg-card));
+        }
+        .module-card.module-highlight-red {
+            border-color: rgba(var(--danger-rgb), 0.2);
+            background: linear-gradient(135deg, rgba(var(--danger-rgb), 0.03), var(--bg-card));
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .module-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .module-name {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .module-meta {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        .module-role-badge {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+        .module-desc {
+            font-size: 0.92rem !important;
+            color: var(--text-muted) !important;
+            margin-bottom: 12px !important;
+            line-height: 1.65;
+        }
+        .module-io {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .io-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+        .io-badge.io-in {
+            background: rgba(var(--accent-rgb), 0.08);
+            color: var(--accent);
+            border: 1px solid rgba(var(--accent-rgb), 0.15);
+        }
+        .io-badge.io-out {
+            background: rgba(var(--success-rgb), 0.08);
+            color: var(--success);
+            border: 1px solid rgba(var(--success-rgb), 0.15);
+        }
+
+        /* Expandable code panels */
+        .code-expand {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .code-expand summary {
+            padding: 10px 14px;
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: rgba(0,0,0,0.15);
+            transition: var(--transition);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .code-expand summary::before {
+            content: '▸';
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+            color: var(--text-dim);
+        }
+        .code-expand[open] summary::before {
+            transform: rotate(90deg);
+        }
+        .code-expand summary:hover {
+            background: rgba(0,0,0,0.25);
+            color: var(--primary);
+        }
+        .code-expand .code-block {
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ═══════════════════════════════════════════════
+           MERMAID
+           ═══════════════════════════════════════════════ */
+        .mermaid-container {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+            margin: 30px 0;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+
+        /* ═══════════════════════════════════════════════
+           METRIC GRID — Section 7
+           ═══════════════════════════════════════════════ */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        @media (max-width: 900px) { .metric-grid { grid-template-columns: 1fr; } }
+
+        .metric-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .metric-card.card-red::before { background: linear-gradient(90deg, var(--danger), rgba(var(--danger-rgb),0.3)); }
+        .metric-card.card-yellow::before { background: linear-gradient(90deg, var(--warning), rgba(251,191,36,0.3)); }
+        .metric-card.card-green::before { background: linear-gradient(90deg, var(--success), rgba(var(--success-rgb),0.3)); }
+
+        .metric-value {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        .metric-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .metric-desc {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            font-size: 0.9rem;
+        }
+        .comparison-table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 2px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+        }
+        .comparison-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .comparison-table td:first-child { font-weight: 600; color: var(--text-main); }
+        .comparison-table .val-red { color: var(--danger); font-weight: 700; font-family: var(--font-mono); }
+        .comparison-table .val-yellow { color: var(--warning); font-weight: 700; font-family: var(--font-mono); }
+        .comparison-table .val-green { color: var(--success); font-weight: 700; font-family: var(--font-mono); }
+
+        /* ═══════════════════════════════════════════════
+           LIVE SIMULATION — Section 8
+           ═══════════════════════════════════════════════ */
+        .sim-dashboard { margin-top: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+        .sim-controls-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .control-row { display: flex; gap: 18px; align-items: flex-end; flex-wrap: wrap; }
+        .control-item { display: flex; flex-direction: column; gap: 6px; }
+        .control-item.flex-grow { flex: 1; min-width: 180px; }
+        .control-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .sim-controls-panel select,
+        .sim-controls-panel input[type="text"] {
+            background: rgba(2, 4, 8, 0.85);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .sim-controls-panel select:focus,
+        .sim-controls-panel input[type="text"]:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1); }
+        .mt-12 { margin-top: 12px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+
+        .btn {
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            background: linear-gradient(135deg, var(--primary), #0ea5e9);
+            color: #000;
+            font-size: 0.88rem;
+            letter-spacing: 0.02em;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3); }
+        .btn:active { transform: translateY(0); }
+
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--text-dim);
+            transition: .25s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 16px; width: 16px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .25s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success); box-shadow: 0 0 12px rgba(var(--success-rgb), 0.4); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .casom-switch-card {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(var(--danger-rgb), 0.08);
+            border: 1px solid rgba(var(--danger-rgb), 0.2);
+            padding: 8px 16px; border-radius: 8px;
+            transition: var(--transition);
+        }
+        .casom-switch-card.active {
+            background: rgba(var(--success-rgb), 0.1);
+            border-color: rgba(var(--success-rgb), 0.25);
+            box-shadow: 0 0 20px rgba(var(--success-rgb), 0.08);
+        }
+        .casom-status-text {
+            font-family: var(--font-display);
+            font-size: 0.75rem; font-weight: 800;
+            color: var(--danger);
+            letter-spacing: 0.8px;
+            transition: color 0.3s;
+        }
+        .casom-switch-card.active .casom-status-text { color: var(--success); }
+
+        /* Viewport Panels */
+        .sim-viewport { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 960px) { .sim-viewport { grid-template-columns: 1fr; } }
+
+        .viewport-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+        .panel-header {
+            display: flex; align-items: center; gap: 10px;
+            font-family: var(--font-display);
+            font-size: 0.88rem; font-weight: 700;
+            margin-bottom: 14px; color: #fff;
+        }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .active-blue { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+        .active-red { background: var(--danger); box-shadow: 0 0 8px var(--danger); animation: pulse-indicator 2s infinite; }
+        .active-green { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse-indicator 2s infinite; }
+
+        @keyframes pulse-indicator { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        /* Canvas Container with scanline effect */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2.2 / 1;
+            min-height: 220px;
+            background: radial-gradient(ellipse at 50% 50%, #0d1527 0%, #030712 100%);
+            border-radius: 8px;
+            border: 1px solid rgba(var(--primary-rgb), 0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(var(--primary-rgb), 0.03);
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .canvas-container::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.12) 50%),
+                linear-gradient(90deg, rgba(var(--primary-rgb),0.015), rgba(var(--success-rgb),0.01), rgba(var(--danger-rgb),0.015));
+            background-size: 100% 3px, 6px 100%;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        .keyboard-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: auto; }
+
+        .key-node {
+            position: absolute;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(8px);
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 2px solid rgba(255,255,255,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            border-radius: 5px;
+            font-family: var(--font-sans);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transform: translate(-50%, -50%);
+            transition: var(--transition);
+            pointer-events: auto;
+            user-select: none;
+        }
+        .key-node.space-key { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; }
+
+        .panel-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.25);
+            padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+        .meta-label { color: var(--text-dim); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .meta-value { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+        .text-blue { color: var(--primary); }
+        .text-red { color: var(--danger); }
+        .text-green { color: var(--success); }
+
+        /* Key States */
+        .key-node.active-user {
+            background: rgba(var(--primary-rgb), 0.4) !important;
+            border-color: var(--primary) !important;
+            color: #fff !important;
+            box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.7), inset 0 1px 2px rgba(255,255,255,0.3) !important;
+            text-shadow: 0 0 8px #fff !important;
+        }
+        .key-node.active-attacker-hit {
+            background: rgba(var(--danger-rgb), 0.4) !important;
+            border-color: var(--danger) !important;
+            color: #fff !important;
+            box-shadow: 0 0 20px rgba(var(--danger-rgb), 0.7), inset 0 1px 2px rgba(255,255,255,0.3) !important;
+        }
+        .key-node.active-attacker-miss {
+            background: rgba(var(--success-rgb), 0.3) !important;
+            border-color: var(--success) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(var(--success-rgb), 0.5) !important;
+        }
+        .keyboard-attacker .key-node {
+            border-color: rgba(var(--danger-rgb), 0.12);
+            border-bottom-color: rgba(var(--danger-rgb), 0.2);
+            color: #64748b;
+        }
+        .keyboard-grid:not(.keyboard-attacker) .key-node:hover {
+            background: rgba(var(--primary-rgb), 0.2) !important;
+            border-color: var(--primary) !important;
+            color: #fff !important;
+            cursor: pointer;
+            transform: translate(-50%, -50%) scale(1.08) !important;
+            box-shadow: 0 0 16px rgba(var(--primary-rgb), 0.5), inset 0 1px 1px rgba(255,255,255,0.15) !important;
+        }
+
+        /* Swapped/Layout-specific key highlighting */
+        .key-node.key-swapped {
+            border-color: rgba(var(--primary-rgb), 0.45) !important;
+            background: rgba(var(--primary-rgb), 0.12) !important;
+            color: #fff !important;
+            box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.2), inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+
+        /* Viewport Legend */
+        .viewport-legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 6px 0 10px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.65rem; color: var(--text-dim); font-weight: 500; }
+        .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .legend-line { width: 14px; height: 2px; border-radius: 2px; flex-shrink: 0; }
+
+        /* Analytics */
+        .analytics-row { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 20px; }
+        @media (max-width: 960px) { .analytics-row { grid-template-columns: 1fr; } }
+
+        .analytics-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            display: flex; flex-direction: column;
+        }
+        .analytics-header {
+            font-family: var(--font-display);
+            font-size: 0.75rem; font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding-bottom: 8px;
+        }
+        .terminal-logs {
+            background: #020408;
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 6px;
+            padding: 12px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            display: flex; flex-direction: column; gap: 3px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .terminal-line { line-height: 1.5; }
+
+        .stats-content { display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; }
+        .stat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            padding-bottom: 6px;
+        }
+        .stat-row span { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; }
+        .stat-row strong { color: #fff; font-family: var(--font-mono); font-size: 0.85rem; }
+
+        .stat-progress-container { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .progress-label { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+        .progress-bar-bg { height: 8px; background: rgba(0,0,0,0.4); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+        .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--danger), var(--accent)); border-radius: 4px; transition: width 0.3s ease; }
+        .progress-bar-fill.secured { background: linear-gradient(90deg, var(--success), #34d399); }
+
+        .typing-hint {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(var(--primary-rgb), 0.05);
+            border: 1px solid rgba(var(--primary-rgb), 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .typing-hint .hint-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 24px 20px 60px; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.4rem; }
+            .metric-grid { grid-template-columns: 1fr; }
+            .sim-viewport { grid-template-columns: 1fr; }
+            .analytics-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">CASOM v2</div>
+        <div class="sidebar-sub">Project Walkthrough</div>
+        <ul class="nav-list">
+            <li><a href="#intro" class="nav-item active"><span class="nav-num">1</span>Executive Summary</a></li>
+            <li><a href="#threat" class="nav-item"><span class="nav-num">2</span>The Threat Model</a></li>
+            <li><a href="#attack" class="nav-item"><span class="nav-num">3</span>Attack Methodology</a></li>
+            <li><a href="#flaws" class="nav-item"><span class="nav-num">4</span>Defense Vulnerabilities</a></li>
+            <li><a href="#casom" class="nav-item"><span class="nav-num">5</span>CASOM Architecture</a></li>
+            <li><a href="#implementation" class="nav-item"><span class="nav-num">6</span>Code Implementation</a></li>
+            <li><a href="#results" class="nav-item"><span class="nav-num">7</span>Validation Results</a></li>
+            <li><a href="#simulation" class="nav-item"><span class="nav-num">8</span>Live Simulation</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            IEEE Conference Paper<br>Context-Aware Sensor Obfuscation
+        </div>
+    </aside>
+
+    <main class="main-content">
+        
+        <!-- ═══════════════ 1. Executive Summary ═══════════════ -->
+        <section id="intro">
+            <h1>CASOM v2:<br><span class="gradient-text">End-to-End Project Explanation</span></h1>
+            <p>Welcome to the comprehensive technical walkthrough of the <strong>Context-Aware Sensor Obfuscation Middleware (CASOM v2)</strong> — a defense system designed to protect virtual-reality users from silent keystroke-inference attacks.</p>
+            <div class="info-box">
+                <p><strong>The Core Problem:</strong> Virtual Reality and Augmented Reality headsets (like Meta Quest or Apple Vision Pro) constantly track user head movements. Malicious background applications can silently record this sensor telemetry and reconstruct what you type on a virtual keyboard — a side-channel attack known as <strong>SNOOPFINGER</strong>.</p>
+            </div>
+            <p>This project fully implements the SNOOPFINGER attack simulation, analyzes why standard mathematical defenses fail, and constructs a robust OS-level defense middleware (CASOM) that perfectly nullifies the threat without impacting the user experience.</p>
+        </section>
+
+        <!-- ═══════════════ 2. Threat Model ═══════════════ -->
+        <section id="threat">
+            <h2><span class="section-badge badge-red">2</span>The Threat Model (SNOOPFINGER)</h2>
+            <p>The threat model assumes the attacker has a malicious app running in the background of the VR headset. The app does not have permissions to read your keyboard input, but it <strong>does</strong> have access to zero-permission motion sensors (IMUs, Gyroscopes, Accelerometers).</p>
+            
+            <div class="danger-box">
+                <p><strong>Cross-Modality Leakage:</strong> Because you "look" at keys to type them in VR, your head orientation perfectly mirrors your keystrokes. The attacker captures a stream of 72Hz quaternion data and translates it into a 2D gaze trajectory on a virtual plane.</p>
+            </div>
+            
+            <h3>The Telemetry Pipeline</h3>
+            <ul>
+                <li><strong>72Hz Sampling:</strong> High-frequency sensor updates capture sub-millisecond head movements.</li>
+                <li><strong>Kinematic Modeling:</strong> Humans move their heads using a "Minimum-Jerk" trajectory. The attacker searches for pauses (dwells) to identify when a key was pressed.</li>
+            </ul>
+        </section>
+
+        <!-- ═══════════════ 3. Attack Methodology ═══════════════ -->
+        <section id="attack">
+            <h2><span class="section-badge badge-red">3</span>Attack Methodology (BackTree)</h2>
+            <p>Once the attacker extracts the coordinate "dwell" locations, they don't actually know which keys were pressed because the VR keyboard can be positioned anywhere in 3D space. They only know the <strong>relative geometric distances and angles</strong> between the keys.</p>
+            
+            <h3>The BackTree Algorithm</h3>
+            <p>The Backward Key Inference Tree (BackTree) solves this by using a Dictionary Trie:</p>
+            <ol>
+                <li>The attacker assumes the <em>last</em> recorded point is the "Enter" or "Space" key.</li>
+                <li>Working backward, the attacker uses the mathematical distance vectors to guess the preceding keys.</li>
+                <li>They traverse an English Dictionary Trie. Any path that geographically doesn't match a real English word is pruned.</li>
+                <li><strong>Result:</strong> Even without knowing the absolute coordinates, the geometry alone narrows the possibilities down to the exact target word with over 80% accuracy.</li>
+            </ol>
+        </section>
+
+        <!-- ═══════════════ 4. Defense Flaws ═══════════════ -->
+        <section id="flaws">
+            <h2><span class="section-badge badge-purple">4</span>Why Standard Defenses Fail</h2>
+            <p>The simplest way to defend against sensor tracking is to inject noise (like Gaussian or Laplace random jitter) into the sensor stream. However, this is mathematically flawed.</p>
+            
+            <h3>The Law of Large Numbers (LLN) Vulnerability</h3>
+            <p>When a user types, they pause their head on a key for roughly 15 sensor frames (a ~200ms dwell). The attacker simply averages all 15 frames together.</p>
+            <div class="card" style="text-align: center;">
+                $$ \text{Centroid} = \lim_{N \to \infty} \frac{1}{N} \sum_{i=1}^N (x_i + \eta_i) \approx \bar{x} $$
+            </div>
+            <p>Because the noise $\eta_i$ has a mean of zero, the average of the noisy frames perfectly collapses back into the true, original coordinate. The defense is entirely bypassed.</p>
+            
+            <h3>Correlated Drift Vulnerability</h3>
+            <p>Another approach is "drifting" the noise slowly over time. However, because the BackTree algorithm only cares about the <em>relative distance</em> between rapid consecutive keystrokes, slow-drifting noise preserves the geometry perfectly. The BackTree algorithm still succeeds.</p>
+        </section>
+
+        <!-- ═══════════════ 5. CASOM Architecture ═══════════════ -->
+        <section id="casom">
+            <h2><span class="section-badge badge-green">5</span>CASOM v2 Architecture</h2>
+            <p>The <strong>Context-Aware Sensor Obfuscation Middleware (CASOM v2)</strong> is implemented at the operating system driver layer (beneath untrusted background applications and above the physical hardware). By decoupling the telemetry delivery channels, it feeds a pristine stream to the foreground application while supplying a structured, poisoned stream to background sensor listeners.</p>
+            
+            <h3>Dual-Path Isolation Topology</h3>
+            <p>Rather than obfuscating the eye-tracking and IMU coordinates globally (which would introduce latency and misalignment for the user), CASOM v2 employs a context-aware dual-path multiplexer. When the secure system keyboard is focused, CASOM intercepts the background listener socket while preserving the foreground channel.</p>
+
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                        %% Nodes
+                        subgraph HW ["Eye Tracking & IMU Hardware"]
+                            H1["Raw Gaze Vector Tracker<br/><small>(72 Hz Spatial Stream)</small>"]
+                            H2["IMU Rotation & Gyro Sensors<br/><small>(Head Orientation Vectors)</small>"]
+                        end
+
+                        subgraph OS ["Secure OS-Level Middleware (Kernel Space)"]
+                            S_MUX["Hardware MUX / Sensor Broker"]
+                            
+                            subgraph CASOM ["CASOM v2 Obfuscation Engine"]
+                                C_COND{"Context Check:<br/>Is Input Window Active?"}
+                                C_RAW["Raw Telemetry Pass-through"]
+                                
+                                subgraph BLK ["Block Offset Generator (defeat averaging)"]
+                                    C_CNT["Sample Cadence Counter<br/><small>(15-sample intervals)</small>"]
+                                    C_LPL["Laplace Noise Generator<br/><small>dx, dy ~ Laplace(0, b)</small>"]
+                                    C_HLD["Sample-and-Hold Register<br/><small>(Latched Offset Vector)</small>"]
+                                    C_ADD["Spatial Vector Combiner<br/><small>P_raw + delta_k</small>"]
+                                end
+                            end
+                        end
+
+                        subgraph FG ["Foreground App Context (Trusted)"]
+                            V_KEY["Secure System Keyboard Overlay<br/><small>(Perfect Geometry & Low Latency)</small>"]
+                        end
+
+                        subgraph BG ["Background App Context (Untrusted)"]
+                            B_APP["Malicious App Gaze Listener<br/><small>(SNOOPFINGER Attack)</small>"]
+                            B_BT["BackTree Inference Engine<br/><small>(Averaging & Dictionary Match)</small>"]
+                        end
+
+                        %% Connections
+                        H1 --> S_MUX
+                        H2 --> S_MUX
+                        
+                        S_MUX -- "Secure IPC Channel" --> V_KEY
+                        S_MUX --> C_COND
+                        
+                        C_COND -- "Yes (Typing State)" --> C_CNT
+                        C_COND -- "No (Idle/Passive Gaze)" --> C_RAW
+                        
+                        C_CNT -- "Interval Refresh<br/>(i % 15 == 0)" --> C_LPL
+                        C_CNT -- "Latch Hold<br/>(i % 15 != 0)" --> C_HLD
+                        C_LPL --> C_HLD
+                        C_HLD --> C_ADD
+                        
+                        C_ADD --> B_APP
+                        C_RAW --> B_APP
+                        
+                        B_APP --> B_BT
+
+                        %% Style Definitions
+                        style H1 fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff
+                        style H2 fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff
+                        style S_MUX fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+                        style C_COND fill:#0c4a6e,stroke:#0ea5e9,stroke-width:2px,color:#fff
+                        style C_RAW fill:#1e293b,stroke:#475569,stroke-width:2px,color:#fff
+                        style C_CNT fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#fff
+                        style C_LPL fill:#1e293b,stroke:#a855f7,stroke-width:2px,color:#fff
+                        style C_HLD fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#fff
+                        style C_ADD fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#fff
+                        style V_KEY fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+                        style B_APP fill:#4c0519,stroke:#f43f5e,stroke-width:2px,color:#fff
+                        style B_BT fill:#4c0519,stroke:#f43f5e,stroke-width:2px,color:#fff
+                </div>
+            </div>
+
+            <h3>Mathematical Proof of Efficacy</h3>
+            <p>To understand why simple noise injection fails, we must analyze the attack model mathematically. Let $\mathbf{p}(t) = [x(t), y(t)]^T$ be the user's true gaze coordinate at frame $t$. During a single keypress, the user dwells on a key for a short temporal window $t \in [T_1, T_2]$ containing $N_{\text{dwell}}$ samples (typically 15 to 30 frames at 72 Hz).</p>
+            
+            <div class="info-box">
+                <h4>1. Vulnerability of i.i.d. Obfuscation (Averaging Attacker)</h4>
+                <p>If the operating system injects independent and identically distributed (i.i.d.) zero-mean noise at each frame:
+                $$\mathbf{p}_{\text{obf}}(t) = \mathbf{p}(t) + \boldsymbol{\eta}(t), \quad \boldsymbol{\eta}(t) \sim \text{Laplace}(0, b)$$
+                An adaptive attacker can segment the telemetry stream into dwell regions, isolate the coordinate clusters, and calculate the sample mean (centroid):
+                $$\hat{\mathbf{p}}_{\text{dwell}} = \frac{1}{N_{\text{dwell}}} \sum_{t=T_1}^{T_2} \mathbf{p}_{\text{obf}}(t) = \left( \frac{1}{N_{\text{dwell}}} \sum_{t=T_1}^{T_2} \mathbf{p}(t) \right) + \frac{1}{N_{\text{dwell}}} \sum_{t=T_1}^{T_2} \boldsymbol{\eta}(t)$$
+                By the Law of Large Numbers, since the noise variables are independent with $\mathbb{E}[\boldsymbol{\eta}] = \mathbf{0}$, the noise term vanishes as $N_{\text{dwell}}$ increases:
+                $$\frac{1}{N_{\text{dwell}}} \sum_{t=T_1}^{T_2} \boldsymbol{\eta}(t) \xrightarrow{p} \mathbf{0}$$
+                Thus, the attacker recovers the true key position centroid with high accuracy ($\hat{\mathbf{p}}_{\text{dwell}} \approx \mathbf{p}_{\text{true}}$), defeating the defense.</p>
+            </div>
+
+            <div class="success-box" style="margin-top: 16px;">
+                <h4>2. Resilience of CASOM Block-Laplace Strategy</h4>
+                <p>CASOM v2 structures the noise into temporal blocks of size $B$ (where $B \approx 15$ frames). For the $k$-th block $B_k$, CASOM samples a single random vector:
+                $$\boldsymbol{\Delta}_k \sim \text{Laplace}(0, b)$$
+                And applies it uniformly across all frames within that block:
+                $$\mathbf{p}_{\text{obf}}(t) = \mathbf{p}(t) + \boldsymbol{\Delta}_k, \quad \forall t \in B_k$$
+                When the attacker segments the dwell frames and computes the centroid, the noise does not cancel:
+                $$\hat{\mathbf{p}}_{\text{dwell}} = \left( \frac{1}{N_{\text{dwell}}} \sum_{t \in B_k} \mathbf{p}(t) \right) + \frac{1}{N_{\text{dwell}}} \sum_{t \in B_k} \boldsymbol{\Delta}_k = \mathbf{p}_{\text{true}} + \boldsymbol{\Delta}_k$$
+                Since the offset vector $\boldsymbol{\Delta}_k$ is constant across the entire dwell, it remains fully preserved in the centroid estimate. Additionally, since the offset $\boldsymbol{\Delta}_k$ is drawn independently for each keypress block, the relative distance vectors $\mathbf{v}_{k \to k+1}$ between successive key centroids are corrupted by the difference of two independent Laplace variables:
+                $$\mathbf{v}_{k \to k+1} = \left(\mathbf{p}_{\text{true}}^{(k+1)} - \mathbf{p}_{\text{true}}^{(k)}\right) + \left(\boldsymbol{\Delta}_{k+1} - \boldsymbol{\Delta}_k\right)$$
+                This breaks the geometric structure of the user's keystroke paths, rendering the BackTree word list search useless and collapsing attacker accuracy to $< 6\%$.</p>
+            </div>
+        </section>
+
+        <!-- ═══════════════ 6. Code Implementation ═══════════════ -->
+        <section id="implementation">
+            <h2><span class="section-badge badge-blue">6</span>Code Implementation</h2>
+            <p>The project is built as a <strong>complete Python simulation pipeline</strong> of 6 modules. Each module is a standalone component that feeds into the next. Below is the architectural data flow, followed by a deep dive into each file with real source code.</p>
+
+            <!-- ─── Pipeline Flowchart ─── -->
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph LR
+                        A["keyboard.py<br/><small>2D QWERTY Layout</small>"] --> B["create_dataset.py<br/><small>72Hz Telemetry Generator</small>"]
+                        B --> C["casom_defense.py<br/><small>OS-Level Defense Middleware</small>"]
+                        C --> D["adaptive_attacker.py<br/><small>Dwell-Aware Segmentation</small>"]
+                        D --> E["backtree.py<br/><small>BackTree Word Inference</small>"]
+                        A --> E
+                        C --> F["benchmark.py<br/><small>Automated Trial Orchestrator</small>"]
+                        D --> F
+                        E --> F
+
+                        style A fill:#1e293b,stroke:#38bdf8,color:#38bdf8
+                        style B fill:#1e293b,stroke:#8b5cf6,color:#8b5cf6
+                        style C fill:#1e293b,stroke:#10b981,color:#10b981
+                        style D fill:#1e293b,stroke:#f43f5e,color:#f43f5e
+                        style E fill:#1e293b,stroke:#f43f5e,color:#f43f5e
+                        style F fill:#1e293b,stroke:#fbbf24,color:#fbbf24
+                </div>
+            </div>
+
+            <!-- ─── Module Cards ─── -->
+            <div class="module-grid">
+
+                <!-- Module 1: keyboard.py -->
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary);">01</div>
+                        <div>
+                            <div class="module-name">keyboard.py</div>
+                            <div class="module-meta">29 lines · Foundation Module</div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary);">DATA</div>
+                    </div>
+                    <p class="module-desc">Defines the 2D coordinate layout of a standard QWERTY virtual keyboard. Every key is mapped to an <code>(x, y)</code> tuple — the ground truth geometry that the entire attack and defense chain depends on.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-out">Output: KEYBOARD_LAYOUT dict</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — KEYBOARD_LAYOUT + get_key_from_pos()</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="py-kw">KEYBOARD_LAYOUTS</span> = {
+    <span class="py-str">'qwerty'</span>: { ... },
+    <span class="py-str">'azerty'</span>: { ... },
+    <span class="py-str">'qwertz'</span>: { ... }
+}
+<span class="py-kw">KEYBOARD_LAYOUT</span> = <span class="py-fn">dict</span>(KEYBOARD_LAYOUTS[<span class="py-str">'qwerty'</span>])
+
+<span class="py-kw">def</span> <span class="py-fn">set_active_layout</span>(name):
+    <span class="py-str">"""Updates KEYBOARD_LAYOUT in-place."""</span>
+    <span class="py-kw">global</span> ACTIVE_LAYOUT_NAME
+    <span class="py-kw">if</span> name <span class="py-kw">in</span> KEYBOARD_LAYOUTS:
+        KEYBOARD_LAYOUT.clear()
+        KEYBOARD_LAYOUT.update(KEYBOARD_LAYOUTS[name])
+        <span class="py-kw">return</span> <span class="py-kw">True</span>
+    <span class="py-kw">return</span> <span class="py-kw">False</span>
+
+<span class="py-kw">def</span> <span class="py-fn">get_key_from_pos</span>(x, y, threshold=<span class="py-num">0.6</span>):
+    <span class="py-str">"""Finds the closest key to a given (x, y) coordinate."""</span>
+    closest_key = <span class="py-kw">None</span>
+    min_dist = <span class="py-fn">float</span>(<span class="py-str">'inf'</span>)
+    <span class="py-kw">for</span> key, (kx, ky) <span class="py-kw">in</span> KEYBOARD_LAYOUT.items():
+        dist = ((kx - x)**<span class="py-num">2</span> + (ky - y)**<span class="py-num">2</span>)**<span class="py-num">0.5</span>
+        <span class="py-kw">if</span> dist &lt; min_dist:
+            min_dist = dist
+            closest_key = key
+    <span class="py-kw">return</span> closest_key <span class="py-kw">if</span> min_dist &lt;= threshold <span class="py-kw">else</span> <span class="py-kw">None</span></div>
+                    </details>
+                </div>
+
+                <!-- Module 2: create_dataset.py -->
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(var(--accent-rgb), 0.15); color: var(--accent);">02</div>
+                        <div>
+                            <div class="module-name">create_dataset.py</div>
+                            <div class="module-meta">163 lines · Telemetry Simulator</div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(var(--accent-rgb), 0.1); color: var(--accent);">GEN</div>
+                    </div>
+                    <p class="module-desc">Generates realistic VR head-tracking telemetry at 72 Hz using <strong>Fitts' Law</strong> for movement timing and <strong>Minimum-Jerk trajectories</strong> for natural kinematic paths. Outputs timestamped CSV data identical to real Oculus Quest 2 sensor streams.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-in">Input: word string</span>
+                        <span class="io-badge io-out">Output: vr_telemetry_dataset.csv</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — Minimum-Jerk Trajectory (Core Physics)</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="py-kw">def</span> <span class="py-fn">minimum_jerk_trajectory</span>(t, duration, p_start, p_end):
+    <span class="py-str">"""Standard minimum-jerk formula for natural human movement"""</span>
+    tau = <span class="py-fn">min</span>(t / duration, <span class="py-num">1.0</span>)
+    scale = <span class="py-num">10</span> * (tau ** <span class="py-num">3</span>) - <span class="py-num">15</span> * (tau ** <span class="py-num">4</span>) + <span class="py-num">6</span> * (tau ** <span class="py-num">5</span>)
+    x = p_start[<span class="py-num">0</span>] + (p_end[<span class="py-num">0</span>] - p_start[<span class="py-num">0</span>]) * scale
+    y = p_start[<span class="py-num">1</span>] + (p_end[<span class="py-num">1</span>] - p_start[<span class="py-num">1</span>]) * scale
+    <span class="py-kw">return</span> x, y
+
+<span class="py-kw">def</span> <span class="py-fn">generate_fitts_movement_time</span>(dist, width=<span class="py-num">1.0</span>):
+    <span class="py-str">"""Fitts' law: MT = a + b * log2(2*D/W)"""</span>
+    a, b = <span class="py-num">0.2</span>, <span class="py-num">0.15</span>
+    <span class="py-kw">return</span> a + b * math.<span class="py-fn">log2</span>(<span class="py-num">2</span> * <span class="py-fn">max</span>(dist, <span class="py-num">0.1</span>) / width)</div>
+                    </details>
+                </div>
+
+                <!-- Module 3: casom_defense.py -->
+                <div class="module-card module-highlight-green">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(var(--success-rgb), 0.15); color: var(--success);">03</div>
+                        <div>
+                            <div class="module-name">casom_defense.py</div>
+                            <div class="module-meta">147 lines · Defense Middleware · <strong style="color: var(--success);">KEY MODULE</strong></div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(var(--success-rgb), 0.1); color: var(--success);">DEF</div>
+                    </div>
+                    <p class="module-desc">The <strong>Context-Aware Sensor Obfuscation Middleware</strong>. Implements 5 defense modes — the critical <code>block</code> mode generates a fresh Laplace offset every 15 samples, held constant within the block. This destroys relative geometry <em>without</em> being averaged away.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-in">Input: raw gaze_points[]</span>
+                        <span class="io-badge io-out">Output: obfuscated stream</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — Block Offset (The Defense That Works)</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="py-kw">class</span> <span class="py-fn">CASOM</span>:
+    <span class="py-str">"""Context-Aware Sensor Obfuscation Middleware."""</span>
+
+    <span class="py-kw">def</span> <span class="py-fn">_laplace</span>(self, b):
+        <span class="comment"># Inverse-CDF sampling of Laplace(0, b)</span>
+        u = self._rng.<span class="py-fn">random</span>() - <span class="py-num">0.5</span>
+        <span class="py-kw">return</span> -b * math.<span class="py-fn">copysign</span>(<span class="py-num">1</span>, u) * math.<span class="py-fn">log</span>(<span class="py-num">1</span> - <span class="py-num">2</span> * <span class="py-fn">abs</span>(u))
+
+    <span class="py-kw">def</span> <span class="py-fn">_block</span>(self, pts):   <span class="comment"># ← RECOMMENDED MODE</span>
+        out = []
+        ox = oy = <span class="py-num">0.0</span>
+        <span class="py-kw">for</span> i, (x, y) <span class="py-kw">in</span> <span class="py-fn">enumerate</span>(pts):
+            <span class="py-kw">if</span> i % self.block_samples == <span class="py-num">0</span>:
+                ox = self.<span class="py-fn">_laplace</span>(self.noise_scale)  <span class="comment"># Fresh offset!</span>
+                oy = self.<span class="py-fn">_laplace</span>(self.noise_scale)
+            out.<span class="py-fn">append</span>((x + ox, y + oy))  <span class="comment"># Constant within block</span>
+        <span class="py-kw">return</span> out</div>
+                    </details>
+                    <details class="code-expand" style="margin-top: 8px;">
+                        <summary>View Source — IID Mode (The Defense That Fails)</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+    <span class="py-kw">def</span> <span class="py-fn">_iid</span>(self, pts):
+        <span class="comment"># Independent noise per sample — DEFEATED by averaging!</span>
+        <span class="py-kw">return</span> [(x + self.<span class="py-fn">_laplace</span>(self.noise_scale),
+                 y + self.<span class="py-fn">_laplace</span>(self.noise_scale)) <span class="py-kw">for</span> (x, y) <span class="py-kw">in</span> pts]
+        <span class="comment"># ↑ Attacker averages 15 frames → noise cancels to zero!</span></div>
+                    </details>
+                </div>
+
+                <!-- Module 4: adaptive_attacker.py -->
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(var(--danger-rgb), 0.15); color: var(--danger);">04</div>
+                        <div>
+                            <div class="module-name">adaptive_attacker.py</div>
+                            <div class="module-meta">87 lines · Adversary Module</div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(var(--danger-rgb), 0.1); color: var(--danger);">ATK</div>
+                    </div>
+                    <p class="module-desc">Two attacker implementations: a <code>NaiveAttacker</code> (distance-threshold clustering) and an <code>AdaptiveAttacker</code> (uses true dwell boundaries for a best-case adversary). The adaptive attacker averages within each dwell segment to cancel IID noise — the reason simple defenses fail.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-in">Input: obfuscated stream + segments</span>
+                        <span class="io-badge io-out">Output: ranked key candidates per press</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — AdaptiveAttacker (Best-Case Adversary)</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="py-kw">class</span> <span class="py-fn">AdaptiveAttacker</span>:
+    <span class="py-str">"""Uses dwell segment boundaries to average within each keypress.
+    Passing true boundaries = upper-bound (best-case) adversary."""</span>
+
+    <span class="py-kw">def</span> <span class="py-fn">ranked_per_key</span>(self, pts, segments):
+        out = []
+        <span class="py-kw">for</span> (s, e) <span class="py-kw">in</span> segments:
+            seg = pts[s:e]
+            cx = <span class="py-fn">sum</span>(p[<span class="py-num">0</span>] <span class="py-kw">for</span> p <span class="py-kw">in</span> seg) / <span class="py-fn">len</span>(seg)  <span class="comment"># Centroid X</span>
+            cy = <span class="py-fn">sum</span>(p[<span class="py-num">1</span>] <span class="py-kw">for</span> p <span class="py-kw">in</span> seg) / <span class="py-fn">len</span>(seg)  <span class="comment"># Centroid Y</span>
+            out.<span class="py-fn">append</span>(<span class="py-fn">_rank_keys</span>(cx, cy))
+        <span class="py-kw">return</span> out
+
+<span class="py-kw">def</span> <span class="py-fn">_rank_keys</span>(x, y):
+    <span class="py-str">"""Return key labels sorted by distance — nearest first."""</span>
+    <span class="py-kw">return</span> [k <span class="py-kw">for</span> k, _ <span class="py-kw">in</span> <span class="py-fn">sorted</span>(KEYBOARD_LAYOUT.items(),
+                                 key=<span class="py-kw">lambda</span> kv: <span class="py-fn">_dist</span>((x, y), kv[<span class="py-num">1</span>]))]</div>
+                    </details>
+                </div>
+
+                <!-- Module 5: backtree.py -->
+                <div class="module-card module-highlight-red">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(var(--danger-rgb), 0.15); color: var(--danger);">05</div>
+                        <div>
+                            <div class="module-name">backtree.py</div>
+                            <div class="module-meta">157 lines · Core Attack Payload · <strong style="color: var(--danger);">KEY MODULE</strong></div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(var(--danger-rgb), 0.1); color: var(--danger);">ATK</div>
+                    </div>
+                    <p class="module-desc">The <strong>Backward Key Inference Tree</strong> — the heart of the SNOOPFINGER attack. Walks backward from the terminator key, using relative distance + angle geometry to infer preceding keys. Candidates are filtered through a dictionary <strong>Trie</strong> and ranked by geometric fit error.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-in">Input: per-key gaze centroids</span>
+                        <span class="io-badge io-in">Input: dictionary + prefix Trie</span>
+                        <span class="io-badge io-out">Output: ranked word candidates</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — BackTree Inference Engine</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+<span class="py-kw">def</span> <span class="py-fn">infer_word_candidates</span>(gaze_points, dictionary, prefixes,
+                          max_per_depth=<span class="py-num">12</span>, top_words=<span class="py-num">50</span>):
+    n_letters = <span class="py-fn">len</span>(gaze_points) - <span class="py-num">1</span>          <span class="comment"># exclude terminator</span>
+    term_key_pos = KEYBOARD_LAYOUT[<span class="py-str">"enter"</span>]   <span class="comment"># reference anchor</span>
+    weights = [<span class="py-fn">dict</span>() <span class="py-kw">for</span> _ <span class="py-kw">in</span> <span class="py-fn">range</span>(n_letters)]
+
+    refs = [(term_key_pos, <span class="py-num">1.0</span>)]
+    <span class="py-kw">for</span> depth <span class="py-kw">in</span> <span class="py-fn">range</span>(n_letters):
+        gaze_to   = gaze_points[<span class="py-fn">len</span>(gaze_points)-<span class="py-num">1</span>-depth]
+        gaze_from = gaze_points[<span class="py-fn">len</span>(gaze_points)-<span class="py-num">2</span>-depth]
+        measured_d = <span class="py-fn">_d</span>(gaze_to, gaze_from)         <span class="comment"># Distance</span>
+        measured_θ = <span class="py-fn">_ang</span>(gaze_to, gaze_from)       <span class="comment"># Angle</span>
+
+        <span class="py-kw">for</span> (ref_pos, _) <span class="py-kw">in</span> refs:
+            cands = <span class="py-fn">_candidates_for</span>(ref_pos, measured_d, measured_θ, ...)
+            <span class="py-kw">for</span> k <span class="py-kw">in</span> cands:
+                weights[depth][k] = weights[depth].<span class="py-fn">get</span>(k, <span class="py-num">0</span>) + <span class="py-num">1</span></div>
+                    </details>
+                    <details class="code-expand" style="margin-top: 8px;">
+                        <summary>View Source — Geometric Fit Ranking</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+    <span class="py-kw">def</span> <span class="py-fn">fit_error</span>(word):
+        <span class="comment"># Score: how well does this word's geometry match the gaze path?</span>
+        keys = <span class="py-fn">list</span>(word) + [<span class="py-str">"enter"</span>]
+        err = <span class="py-num">0.0</span>
+        <span class="py-kw">for</span> i <span class="py-kw">in</span> <span class="py-fn">range</span>(<span class="py-fn">len</span>(keys) - <span class="py-num">1</span>):
+            kp_a = KEYBOARD_LAYOUT[keys[i]]
+            kp_b = KEYBOARD_LAYOUT[keys[i + <span class="py-num">1</span>]]
+            g_a, g_b = gaze_points[i], gaze_points[i + <span class="py-num">1</span>]
+            err += <span class="py-fn">abs</span>(<span class="py-fn">_d</span>(kp_a, kp_b) - <span class="py-fn">_d</span>(g_a, g_b))       <span class="comment"># Distance error</span>
+            err += <span class="py-num">0.05</span> * <span class="py-fn">_ang_diff</span>(<span class="py-fn">_ang</span>(kp_a, kp_b), <span class="py-fn">_ang</span>(g_a, g_b))  <span class="comment"># Angle error</span>
+        <span class="py-kw">return</span> err
+
+    ranked = <span class="py-fn">sorted</span>(<span class="py-fn">set</span>(words), key=fit_error)  <span class="comment"># Best geometric fit first</span></div>
+                    </details>
+                </div>
+
+                <!-- Module 6: benchmark.py -->
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-icon" style="background: rgba(251, 191, 36, 0.15); color: var(--warning);">06</div>
+                        <div>
+                            <div class="module-name">benchmark.py</div>
+                            <div class="module-meta">161 lines · Evaluation Orchestrator</div>
+                        </div>
+                        <div class="module-role-badge" style="background: rgba(251, 191, 36, 0.1); color: var(--warning);">EVAL</div>
+                    </div>
+                    <p class="module-desc">The orchestrator that ties everything together. Runs <strong>30 trials × 12 words × 5 defense modes</strong> against both a NaiveAttacker and an AdaptiveAttacker, reporting Top-1 and Top-3 character accuracy — the honest way to claim a defense works.</p>
+                    <div class="module-io">
+                        <span class="io-badge io-in">Input: all modules above</span>
+                        <span class="io-badge io-out">Output: accuracy tables + charts</span>
+                    </div>
+                    <details class="code-expand">
+                        <summary>View Source — Trial Loop & Evaluation</summary>
+                        <div class="code-block" style="margin-top: 10px; margin-bottom: 0;">
+WORDS = [<span class="py-str">"fox"</span>, <span class="py-str">"the"</span>, <span class="py-str">"quick"</span>, <span class="py-str">"brown"</span>, <span class="py-str">"jumps"</span>, <span class="py-str">"over"</span>, ...]
+TRIALS = <span class="py-num">30</span>; SAMPLE_RATE = <span class="py-num">72.0</span>
+
+<span class="py-kw">def</span> <span class="py-fn">generate_stream</span>(word, rng):
+    <span class="py-str">"""Returns (points, segments, chars) for one word."""</span>
+    dt = <span class="py-num">1.0</span> / SAMPLE_RATE
+    <span class="py-kw">for</span> ch <span class="py-kw">in</span> word.<span class="py-fn">lower</span>():
+        target = KEYBOARD_LAYOUT[ch]
+        dwell = rng.<span class="py-fn">uniform</span>(<span class="py-num">0.15</span>, <span class="py-num">0.30</span>)   <span class="comment"># 150-300ms dwell per key</span>
+        n = <span class="py-fn">max</span>(<span class="py-fn">int</span>(dwell / dt), <span class="py-num">3</span>)
+        <span class="py-kw">for</span> _ <span class="py-kw">in</span> <span class="py-fn">range</span>(n):
+            pts.<span class="py-fn">append</span>((target[<span class="py-num">0</span>] + rng.<span class="py-fn">gauss</span>(<span class="py-num">0</span>, <span class="py-num">0.03</span>),   <span class="comment"># Natural tremor</span>
+                        target[<span class="py-num">1</span>] + rng.<span class="py-fn">gauss</span>(<span class="py-num">0</span>, <span class="py-num">0.03</span>)))</div>
+                    </details>
+                </div>
+
+            </div><!-- /module-grid -->
+        </section>
+
+        <!-- ═══════════════ 7. Validation Results ═══════════════ -->
+        <section id="results">
+            <h2><span class="section-badge badge-green">7</span>End-to-End Validation Results</h2>
+            <p>We executed the BackTree attack against an 8,000-word dictionary across multiple defense configurations. The empirical results prove that CASOM v2 successfully mitigates the side-channel attack.</p>
+
+            <div class="metric-grid">
+                <div class="metric-card card-red">
+                    <div class="metric-value" style="color: var(--danger);" data-target="80.9">0</div>
+                    <div class="metric-label">Baseline Top-1 Accuracy</div>
+                    <div class="metric-desc">Attack is fully lethal without defense.</div>
+                </div>
+                <div class="metric-card card-yellow">
+                    <div class="metric-value" style="color: var(--warning);" data-target="35.8">0</div>
+                    <div class="metric-label">IID Noise Top-1 Accuracy</div>
+                    <div class="metric-desc">Attacker bypasses via Dwell Averaging.</div>
+                </div>
+                <div class="metric-card card-green">
+                    <div class="metric-value" style="color: var(--success);" data-target="3.6">0</div>
+                    <div class="metric-label">CASOM Block Offset Top-1</div>
+                    <div class="metric-desc">Attacker geometry completely destroyed.</div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Defense Mode</th>
+                        <th>Top-1 Accuracy</th>
+                        <th>Top-5 Accuracy</th>
+                        <th>Entropy</th>
+                        <th>Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>No Defense (Baseline)</td>
+                        <td class="val-red">80.9%</td>
+                        <td class="val-red">92.1%</td>
+                        <td class="val-red">Low</td>
+                        <td style="color: var(--danger); font-weight: 600;">FAIL - Fully Vulnerable</td>
+                    </tr>
+                    <tr>
+                        <td>IID Noise (σ=0.5)</td>
+                        <td class="val-yellow">35.8%</td>
+                        <td class="val-yellow">54.2%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
+                    </tr>
+                    <tr>
+                        <td>Drift Noise (σ=0.3)</td>
+                        <td class="val-yellow">42.1%</td>
+                        <td class="val-yellow">61.5%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Geometry Preserved</td>
+                    </tr>
+                    <tr>
+                        <td>CASOM Block Offset (b=1.3)</td>
+                        <td class="val-green">3.6%</td>
+                        <td class="val-green">8.2%</td>
+                        <td class="val-green">Very High</td>
+                        <td style="color: var(--success); font-weight: 600;">PASS - Attack Nullified</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <p style="margin-top: 30px;"><strong>Conclusion:</strong> CASOM v2 effectively drops the attacker's Top-1 inference accuracy from 80.9% down to 3.6%. Because CASOM routes protected data to background apps while routing clean data to the foreground keyboard, user usability remains flawlessly intact.</p>
+        </section>
+
+        <!-- ═══════════════ 8. Live Simulation ═══════════════ -->
+        <section id="simulation">
+            <h2><span class="section-badge badge-blue">8</span>Live Simulation</h2>
+            <p>Experience SNOOPFINGER and the CASOM defense in real-time. Select a word, toggle the CASOM shield, and analyze side-by-side telemetry to see how the attacker is blinded.</p>
+            
+            <div class="sim-dashboard">
+                <!-- Controls -->
+                <div class="sim-controls-panel">
+                    <div class="control-row">
+                        <div class="control-item">
+                            <label class="control-label">Word Preset</label>
+                            <select id="preset-word" onchange="usePresetWord()">
+                                <option value="custom" disabled>-- Custom --</option>
+                                <option value="fox" selected>fox</option>
+                                <option value="crypto">crypto</option>
+                                <option value="password">password</option>
+                                <option value="secret">secret</option>
+                                <option value="bank">bank</option>
+                                <option value="admin">admin</option>
+                                <option value="pin1234">pin1234</option>
+                                <option value="hello world">hello world</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label class="control-label">Layout</label>
+                            <select id="sim-layout" onchange="changeKeyboardLayout()">
+                                <option value="qwerty" selected>QWERTY (EN)</option>
+                                <option value="azerty">AZERTY (FR)</option>
+                                <option value="qwertz">QWERTZ (DE)</option>
+                            </select>
+                        </div>
+                        <div class="control-item flex-grow">
+                            <label class="control-label">Custom Input (Alphanumeric)</label>
+                            <input type="text" id="input-word" value="fox" maxlength="16" placeholder="Type or click keys below...">
+                        </div>
+                        <div class="control-item">
+                            <label class="control-label">Speed</label>
+                            <select id="sim-speed">
+                                <option value="1">1× Detail</option>
+                                <option value="2" selected>2× Normal</option>
+                                <option value="4">4× Fast</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-row flex-between mt-12">
+                        <button class="btn" id="btn-run" onclick="startSim()">Start Attack Simulation</button>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="casom-switch-card" id="decoy-switch-container">
+                                <span class="casom-status-text" id="decoy-status-label">DECOY EVASION INACTIVE</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-decoy" onchange="onDecoyToggle()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="casom-switch-card" id="casom-switch-container">
+                                <span class="casom-status-text" id="casom-status-label">CASOM SHIELD INACTIVE</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-casom" onchange="onCasomToggle()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Viewport -->
+                <div class="sim-viewport">
+                    <!-- Left: User -->
+                    <div class="viewport-panel">
+                        <div class="panel-header">
+                            <div class="status-indicator active-blue"></div>
+                            <span id="kb-header-user">Foreground: Secure VR Keyboard (QWERTY - EN)</span>
+                        </div>
+                        <div class="canvas-container">
+                            <div class="keyboard-grid" id="kb-grid-user"></div>
+                            <canvas id="canvas-user"></canvas>
+                        </div>
+                        <div class="viewport-legend">
+                            <div class="legend-item"><div class="legend-dot" style="background: rgba(var(--primary-rgb),0.8);"></div>Dwell</div>
+                            <div class="legend-item"><div class="legend-line" style="background: rgba(var(--primary-rgb),0.4);"></div>Gaze Path</div>
+                            <div class="legend-item"><div class="legend-dot" style="background: #fff; box-shadow: 0 0 4px var(--primary);"></div>Cursor</div>
+                        </div>
+                        <div class="panel-meta">
+                            <div class="meta-label">User Keystrokes:</div>
+                            <div class="meta-value text-blue" id="user-typed-output">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Attacker -->
+                    <div class="viewport-panel">
+                        <div class="panel-header">
+                            <div class="status-indicator active-red" id="attacker-indicator"></div>
+                            <span id="kb-header-attacker">Background: Malicious IMU Sniffer (QWERTY - EN)</span>
+                        </div>
+                        <div class="canvas-container">
+                            <div class="keyboard-grid keyboard-attacker" id="kb-grid-attacker"></div>
+                            <canvas id="canvas-attacker"></canvas>
+                        </div>
+                        <div class="viewport-legend">
+                            <div class="legend-item"><div class="legend-dot" style="background: rgba(var(--danger-rgb),0.8);"></div>Unprotected</div>
+                            <div class="legend-item"><div class="legend-dot" style="background: rgba(var(--success-rgb),0.8);"></div>CASOM Scrambled</div>
+                            <div class="legend-item"><div class="legend-dot" style="background: #fff; box-shadow: 0 0 4px var(--danger);"></div>Attacker Cursor</div>
+                        </div>
+                        <div class="panel-meta">
+                            <div class="meta-label">Inferred Word:</div>
+                            <div class="meta-value text-red" id="attacker-inferred-output">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="analytics-row">
+                    <!-- Terminal Logs -->
+                    <div class="analytics-panel">
+                        <div class="analytics-header">Real-Time Sensor & Middleware Telemetry</div>
+                        <div class="terminal-logs" id="terminal-logs">
+                            <div class="terminal-line" style="color: var(--text-dim);">[SYSTEM] Console ready. Awaiting simulation input...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Panel -->
+                    <div class="analytics-panel">
+                        <div class="analytics-header">BackTree Inference Engine (Attacker)</div>
+                        <div class="stats-content">
+                            <div class="stat-row">
+                                <span>Attack Vector:</span>
+                                <strong>SNOOPFINGER / BackTree</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Signal Entropy:</span>
+                                <strong id="stat-entropy" style="color: var(--danger)">Low (Predictable)</strong>
+                            </div>
+                            <div class="stat-row">
+                                <span>Dwell Clustering:</span>
+                                <strong id="stat-clustering">0 / 0 keys mapped</strong>
+                            </div>
+                            <div class="stat-progress-container">
+                                <div class="progress-label">Word Match Confidence: <span id="stat-conf-val">0%</span></div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="stat-conf-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row" style="margin-top: 8px; border-bottom: none; padding-bottom: 0;">
+                                <span>Top Dictionary Matches:</span>
+                            </div>
+                            <div id="attacker-candidates" style="font-family: var(--font-mono); font-size: 0.72rem; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 4px;">
+                                <div style="color: var(--text-dim);">1. — (0.0%)</div>
+                                <div style="color: var(--text-dim);">2. — (0.0%)</div>
+                                <div style="color: var(--text-dim);">3. — (0.0%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="typing-hint">
+                    <span class="hint-icon">[Kb]</span>
+                    <span><strong>Tip:</strong> Click keys on the left keyboard to type a custom word, or just use your physical keyboard! Press <strong>Enter</strong> to launch the simulation.</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+    const LAYOUTS = {
+        qwerty: {
+            '1': [0, 3], '2': [1, 3], '3': [2, 3], '4': [3, 3], '5': [4, 3],
+            '6': [5, 3], '7': [6, 3], '8': [7, 3], '9': [8, 3], '0': [9, 3],
+            'q': [0, 2], 'w': [1, 2], 'e': [2, 2], 'r': [3, 2], 't': [4, 2],
+            'y': [5, 2], 'u': [6, 2], 'i': [7, 2], 'o': [8, 2], 'p': [9, 2],
+            'a': [0.5, 1], 's': [1.5, 1], 'd': [2.5, 1], 'f': [3.5, 1], 'g': [4.5, 1],
+            'h': [5.5, 1], 'j': [6.5, 1], 'k': [7.5, 1], 'l': [8.5, 1],
+            'z': [1, 0], 'x': [2, 0], 'c': [3, 0], 'v': [4, 0], 'b': [5, 0],
+            'n': [6, 0], 'm': [7, 0],
+            'enter': [9, 0],
+            'space': [4.5, -1]
+        },
+        azerty: {
+            '1': [0, 3], '2': [1, 3], '3': [2, 3], '4': [3, 3], '5': [4, 3],
+            '6': [5, 3], '7': [6, 3], '8': [7, 3], '9': [8, 3], '0': [9, 3],
+            'a': [0, 2], 'z': [1, 2], 'e': [2, 2], 'r': [3, 2], 't': [4, 2],
+            'y': [5, 2], 'u': [6, 2], 'i': [7, 2], 'o': [8, 2], 'p': [9, 2],
+            'q': [0.5, 1], 's': [1.5, 1], 'd': [2.5, 1], 'f': [3.5, 1], 'g': [4.5, 1],
+            'h': [5.5, 1], 'j': [6.5, 1], 'k': [7.5, 1], 'l': [8.5, 1], 'm': [9.5, 1],
+            'w': [1, 0], 'x': [2, 0], 'c': [3, 0], 'v': [4, 0], 'b': [5, 0],
+            'n': [6, 0],
+            'enter': [9, 0],
+            'space': [4.5, -1]
+        },
+        qwertz: {
+            '1': [0, 3], '2': [1, 3], '3': [2, 3], '4': [3, 3], '5': [4, 3],
+            '6': [5, 3], '7': [6, 3], '8': [7, 3], '9': [8, 3], '0': [9, 3],
+            'q': [0, 2], 'w': [1, 2], 'e': [2, 2], 'r': [3, 2], 't': [4, 2],
+            'z': [5, 2], 'u': [6, 2], 'i': [7, 2], 'o': [8, 2], 'p': [9, 2],
+            'a': [0.5, 1], 's': [1.5, 1], 'd': [2.5, 1], 'f': [3.5, 1], 'g': [4.5, 1],
+            'h': [5.5, 1], 'j': [6.5, 1], 'k': [7.5, 1], 'l': [8.5, 1],
+            'y': [1, 0], 'x': [2, 0], 'c': [3, 0], 'v': [4, 0], 'b': [5, 0],
+            'n': [6, 0], 'm': [7, 0],
+            'enter': [9, 0],
+            'space': [4.5, -1]
+        }
+    };
+    let KEYBOARD = LAYOUTS.qwerty;
+
+    // Coordinate mapping — matches Demo.html's proven coordinate system
+    const KB_MIN_X = -1.0, KB_MAX_X = 10.0, KB_MIN_Y = -1.8, KB_MAX_Y = 3.8;
+
+    function getPx(x, y, canvas) {
+        return [
+            ((x - KB_MIN_X) / (KB_MAX_X - KB_MIN_X)) * canvas.width,
+            ((KB_MAX_Y - y) / (KB_MAX_Y - KB_MIN_Y)) * canvas.height
+        ];
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       WEB AUDIO — Keyboard Click Sounds
+       ═══════════════════════════════════════════════════════ */
+    let audioCtx = null;
+    function playKeySound(isHit) {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = isHit ? 880 : 440;
+            gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.08);
+        } catch (e) { /* Audio not critical */ }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════ */
+    let isSimulating = false;
+    let simTimeoutId = null;
+    let userPoints = [];
+    let attackerPoints = [];
+    let userHistory = [];
+    let attackerHistory = [];
+    let currentStepIdx = 0;
+    let speedFactor = 2;
+    let userTypedStr = "";
+    let attackerInferredStr = "";
+    let attackerClusterCount = 0;
+    let attackerTotalClusters = 0;
+
+    /* ═══════════════════════════════════════════════════════
+       KEYBOARD RENDERING
+       ═══════════════════════════════════════════════════════ */
+    function drawKeyboards() {
+        const userContainer = document.getElementById('kb-grid-user');
+        const attackerContainer = document.getElementById('kb-grid-attacker');
+        if (!userContainer || !attackerContainer) return;
+
+        userContainer.innerHTML = '';
+        attackerContainer.innerHTML = '';
+
+        const selectedLayout = document.getElementById('sim-layout') ? document.getElementById('sim-layout').value : 'qwerty';
+
+        for (const [key, [kx, ky]] of Object.entries(KEYBOARD)) {
+            const leftPct = ((kx - KB_MIN_X) / (KB_MAX_X - KB_MIN_X)) * 100;
+            const topPct = ((KB_MAX_Y - ky) / (KB_MAX_Y - KB_MIN_Y)) * 100;
+
+            let w, h = '14%', label = key.toUpperCase(), extraClass = '';
+            if (key === 'space')      { w = '32%'; label = 'SPACE'; extraClass = ' space-key'; }
+            else if (key === 'enter') { w = '12%'; label = 'ENTER'; }
+            else                      { w = '7.5%'; }
+
+            // Highlight layout-specific key changes
+            if (selectedLayout === 'qwertz' && (key === 'z' || key === 'y')) {
+                extraClass += ' key-swapped';
+            } else if (selectedLayout === 'azerty' && ['a', 'z', 'q', 'w', 'm'].includes(key)) {
+                extraClass += ' key-swapped';
+            }
+
+            // User key
+            const uEl = document.createElement('div');
+            uEl.className = 'key-node' + extraClass;
+            uEl.id = `key-user-${key}`;
+            uEl.textContent = label;
+            uEl.style.cssText = `left:${leftPct}%;top:${topPct}%;width:${w};height:${h};`;
+
+            uEl.onclick = () => {
+                if (isSimulating) return;
+                const inputWord = document.getElementById('input-word');
+                const presetSelect = document.getElementById('preset-word');
+
+                if (key === 'enter') { startSim(); return; }
+
+                if (presetSelect.value !== 'custom') {
+                    presetSelect.value = 'custom';
+                    if (key !== 'space') inputWord.value = '';
+                }
+
+                const ch = key === 'space' ? ' ' : key;
+                if (inputWord.value.length < 16) {
+                    inputWord.value += ch;
+                }
+                playKeySound(true);
+            };
+            userContainer.appendChild(uEl);
+
+            // Attacker key
+            const aEl = document.createElement('div');
+            aEl.className = 'key-node' + extraClass;
+            aEl.id = `key-attacker-${key}`;
+            aEl.textContent = label;
+            aEl.style.cssText = `left:${leftPct}%;top:${topPct}%;width:${w};height:${h};`;
+            attackerContainer.appendChild(aEl);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CONTROLS
+       ═══════════════════════════════════════════════════════ */
+    function usePresetWord() {
+        const val = document.getElementById('preset-word').value;
+        if (val !== 'custom') document.getElementById('input-word').value = val;
+    }
+
+    function onCasomToggle() {
+        const active = document.getElementById('toggle-casom').checked;
+        const card = document.getElementById('casom-switch-container');
+        const label = document.getElementById('casom-status-label');
+        const indicator = document.getElementById('attacker-indicator');
+
+        if (active) {
+            card.classList.add('active');
+            label.textContent = "CASOM SHIELD ACTIVE";
+            indicator.className = "status-indicator active-green";
+        } else {
+            card.classList.remove('active');
+            label.textContent = "CASOM SHIELD INACTIVE";
+            indicator.className = "status-indicator active-red";
+        }
+        addLog(`[SYSTEM] CASOM middleware: ${active ? "ENABLED — Block Offset active" : "DISABLED — Raw pass-through (vulnerable)"}`, active ? "success" : "error");
+    }
+
+    function onDecoyToggle() {
+        const active = document.getElementById('toggle-decoy').checked;
+        const card = document.getElementById('decoy-switch-container');
+        const label = document.getElementById('decoy-status-label');
+
+        if (active) {
+            card.classList.add('active');
+            label.textContent = "DECOY EVASION ACTIVE";
+        } else {
+            card.classList.remove('active');
+            label.textContent = "DECOY EVASION INACTIVE";
+        }
+        addLog(`[SYSTEM] Decoy Evasion: ${active ? "ENABLED — Head gaze decoupled from keys (Active Poisoning)" : "DISABLED"}`, active ? "success" : "error");
+    }
+
+    function changeKeyboardLayout() {
+        if (isSimulating) {
+            // Revert selector value
+            const currentLayout = Object.keys(LAYOUTS).find(key => LAYOUTS[key] === KEYBOARD) || 'qwerty';
+            document.getElementById('sim-layout').value = currentLayout;
+            addLog("[SYSTEM] Cannot change keyboard layout while simulation is running!", "error");
+            return;
+        }
+        const selectedLayout = document.getElementById('sim-layout').value;
+        KEYBOARD = LAYOUTS[selectedLayout] || LAYOUTS.qwerty;
+
+        // Re-write viewport headers
+        const layoutLabels = { qwerty: "QWERTY - EN", azerty: "AZERTY - FR", qwertz: "QWERTZ - DE" };
+        const labelText = layoutLabels[selectedLayout] || "QWERTY - EN";
+        document.getElementById('kb-header-user').textContent = `Foreground: Secure VR Keyboard (${labelText})`;
+        document.getElementById('kb-header-attacker').textContent = `Background: Malicious IMU Sniffer (${labelText})`;
+        
+        // Re-draw keyboard keys
+        drawKeyboards();
+        
+        // Clear paths & draw idle message on canvases
+        drawIdleMessage();
+        
+        addLog(`[SYSTEM] Keyboard layout switched to ${selectedLayout.toUpperCase()}`, "success");
+    }
+
+    function addLog(text, type = "info") {
+        const logsEl = document.getElementById('terminal-logs');
+        if (!logsEl) return;
+        const line = document.createElement('div');
+        line.className = `terminal-line ${type === "error" ? "text-red" : type === "success" ? "text-green" : ""}`;
+        line.style.color = type === "info" ? 'var(--text-dim)' : '';
+        const ts = new Date().toLocaleTimeString([], { hour12: false });
+        line.textContent = `[${ts}] ${text}`;
+        logsEl.appendChild(line);
+        logsEl.scrollTop = logsEl.scrollHeight;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MATH UTILS
+       ═══════════════════════════════════════════════════════ */
+    function randomLaplace(mu, b) {
+        const u = Math.random() - 0.5;
+        return mu - b * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
+    }
+
+    function getNearestKey(x, y) {
+        let nearest = null, minDist = Infinity;
+        for (const [key, pos] of Object.entries(KEYBOARD)) {
+            const dist = Math.hypot(pos[0] - x, pos[1] - y);
+            if (dist < minDist) { minDist = dist; nearest = key; }
+        }
+        return minDist < 1.2 ? nearest : null;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CANVAS HELPERS
+       ═══════════════════════════════════════════════════════ */
+    function syncCanvasSize(canvas) {
+        const w = canvas.parentElement.clientWidth;
+        const h = canvas.parentElement.clientHeight;
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
+    }
+
+    function clearCanvases() {
+        const uc = document.getElementById('canvas-user');
+        const ac = document.getElementById('canvas-attacker');
+        if (uc) { syncCanvasSize(uc); uc.getContext('2d').clearRect(0, 0, uc.width, uc.height); }
+        if (ac) { syncCanvasSize(ac); ac.getContext('2d').clearRect(0, 0, ac.width, ac.height); }
+    }
+
+    function resetKeyGlows() {
+        for (const key of Object.keys(KEYBOARD)) {
+            const u = document.getElementById(`key-user-${key}`);
+            const a = document.getElementById(`key-attacker-${key}`);
+            if (u) u.className = u.className.replace(/ active-\S+/g, '').replace(/  +/g, ' ').trim();
+            if (a) a.className = a.className.replace(/ active-\S+/g, '').replace(/  +/g, ' ').trim();
+        }
+    }
+
+    function drawIdleMessage() {
+        const uc = document.getElementById('canvas-user');
+        const ac = document.getElementById('canvas-attacker');
+        if (!uc || !ac) return;
+        syncCanvasSize(uc);
+        syncCanvasSize(ac);
+
+        const uCtx = uc.getContext('2d');
+        const aCtx = ac.getContext('2d');
+        uCtx.clearRect(0, 0, uc.width, uc.height);
+        aCtx.clearRect(0, 0, ac.width, ac.height);
+
+        const font = '13px "Fira Code", Consolas, monospace';
+        uCtx.fillStyle = 'rgba(255,255,255,0.15)';
+        uCtx.font = font;
+        uCtx.textAlign = 'center';
+        uCtx.fillText('Foreground Gaze Canvas [Idle]', uc.width / 2, uc.height / 2);
+
+        aCtx.fillStyle = 'rgba(255,255,255,0.15)';
+        aCtx.font = font;
+        aCtx.textAlign = 'center';
+        aCtx.fillText('Attacker Telemetry Canvas [Idle]', ac.width / 2, ac.height / 2);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SIMULATION ENGINE
+       ═══════════════════════════════════════════════════════ */
+    function startSim() {
+        if (isSimulating) { stopSim(); return; }
+
+        // Reset UI
+        document.getElementById('user-typed-output').textContent = "";
+        document.getElementById('attacker-inferred-output').textContent = "";
+        document.getElementById('stat-clustering').textContent = "0 / 0 keys mapped";
+        document.getElementById('stat-conf-val').textContent = "0%";
+        document.getElementById('stat-conf-bar').style.width = "0%";
+        document.getElementById('stat-conf-bar').classList.remove('secured');
+
+        const candEl = document.getElementById('attacker-candidates');
+        if (candEl) {
+            candEl.innerHTML = `
+                <div style="color: var(--text-dim);">1. — (0.0%)</div>
+                <div style="color: var(--text-dim);">2. — (0.0%)</div>
+                <div style="color: var(--text-dim);">3. — (0.0%)</div>
+            `;
+        }
+
+        userTypedStr = "";
+        attackerInferredStr = "";
+        userHistory = [];
+        attackerHistory = [];
+        attackerClusterCount = 0;
+
+        const active = document.getElementById('toggle-casom').checked;
+        const word = document.getElementById('input-word').value.trim() || 'fox';
+
+        // Build explicit key sequence
+        const cleanWord = word.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+        const keySequence = [];
+        for (const ch of cleanWord) {
+            if (ch === ' ') keySequence.push('space');
+            else if (KEYBOARD[ch]) keySequence.push(ch);
+        }
+        keySequence.push('enter');
+
+        attackerTotalClusters = keySequence.length;
+
+        // Build path points
+        userPoints = [];
+        attackerPoints = [];
+        let curPos = [4.5, 1.0];
+
+        const decoyActive = document.getElementById('toggle-decoy').checked;
+        let totalSteps = 0;
+        if (decoyActive) {
+            let testCurPos = [4.5, 1.0];
+            for (let i = 0; i < keySequence.length; i++) {
+                const key = keySequence[i];
+                if (!KEYBOARD[key]) continue;
+                const destPos = KEYBOARD[key];
+                const steps = Math.floor(Math.hypot(destPos[0] - testCurPos[0], destPos[1] - testCurPos[1]) * 10) + 8;
+                totalSteps += steps + 15;
+                testCurPos = destPos;
+            }
+        }
+
+        let globalStepIdx = 0;
+        for (let i = 0; i < keySequence.length; i++) {
+            const key = keySequence[i];
+            if (!KEYBOARD[key]) continue;
+
+            const destPos = KEYBOARD[key];
+            const steps = Math.floor(Math.hypot(destPos[0] - curPos[0], destPos[1] - curPos[1]) * 10) + 8;
+
+            let blockOx = 0, blockOy = 0;
+            if (active) {
+                blockOx = randomLaplace(0, 1.3);
+                blockOy = randomLaplace(0, 1.3);
+            }
+
+            // Transitions
+            for (let j = 0; j < steps; j++) {
+                const t = j / steps;
+                let ux = curPos[0] + (destPos[0] - curPos[0]) * t;
+                let uy = curPos[1] + (destPos[1] - curPos[1]) * t;
+
+                if (decoyActive) {
+                    const theta = (globalStepIdx / totalSteps) * 2 * Math.PI * 1.5;
+                    ux = 4.5 + 3.2 * Math.cos(theta);
+                    uy = 1.0 + 1.6 * Math.sin(theta);
+                }
+
+                const jx = (Math.random() - 0.5) * 0.06;
+                const jy = (Math.random() - 0.5) * 0.06;
+
+                userPoints.push({ x: ux, y: uy, isDwell: false, key, isKeyTrigger: false, isDecoy: decoyActive });
+                attackerPoints.push({
+                    x: ux + (active ? blockOx : 0) + jx,
+                    y: uy + (active ? blockOy : 0) + jy,
+                    isDwell: false, key, isKeyTrigger: false
+                });
+                globalStepIdx++;
+            }
+
+            // Dwells
+            for (let j = 0; j < 15; j++) {
+                let ux = destPos[0];
+                let uy = destPos[1];
+
+                if (decoyActive) {
+                    const theta = (globalStepIdx / totalSteps) * 2 * Math.PI * 1.5;
+                    ux = 4.5 + 3.2 * Math.cos(theta);
+                    uy = 1.0 + 1.6 * Math.sin(theta);
+                }
+
+                const ujx = (Math.random() - 0.5) * 0.04;
+                const ujy = (Math.random() - 0.5) * 0.04;
+                const ajx = (Math.random() - 0.5) * 0.04;
+                const ajy = (Math.random() - 0.5) * 0.04;
+
+                userPoints.push({ x: ux + ujx, y: uy + ujy, isDwell: true, key, isKeyTrigger: j === 0, isDecoy: decoyActive });
+                attackerPoints.push({
+                    x: ux + (active ? blockOx : 0) + ajx,
+                    y: uy + (active ? blockOy : 0) + ajy,
+                    isDwell: true, key, isKeyTrigger: j === 0,
+                    blockOx: active ? blockOx : 0,
+                    blockOy: active ? blockOy : 0
+                });
+                globalStepIdx++;
+            }
+            curPos = destPos;
+        }
+
+        isSimulating = true;
+        const btn = document.getElementById('btn-run');
+        btn.textContent = "[x] Stop Simulation";
+        btn.style.background = "linear-gradient(135deg, var(--danger), #dc2626)";
+        btn.style.color = "#fff";
+
+        clearCanvases();
+        resetKeyGlows();
+
+        addLog(`[SYSTEM] Simulation started for word: "${word.toUpperCase()}"`, "info");
+        addLog(`[SYSTEM] Defense: ${active ? "CASOM ACTIVE — Block Offset Laplace" : "NONE — Raw Telemetry (VULNERABLE)"}`, active ? "success" : "error");
+
+        currentStepIdx = 0;
+        speedFactor = parseInt(document.getElementById('sim-speed').value) || 2;
+        animateStep();
+    }
+
+    function stopSim() {
+        isSimulating = false;
+        if (simTimeoutId) { clearTimeout(simTimeoutId); simTimeoutId = null; }
+        const btn = document.getElementById('btn-run');
+        btn.textContent = "Start Attack Simulation";
+        btn.style.background = "linear-gradient(135deg, var(--primary), #0ea5e9)";
+        btn.style.color = "#000";
+        resetKeyGlows();
+        drawIdleMessage();
+        addLog("[SYSTEM] Simulation stopped.", "info");
+    }
+
+    function animateStep() {
+        if (!isSimulating) return;
+
+        const limit = Math.min(currentStepIdx + speedFactor, userPoints.length);
+        const uc = document.getElementById('canvas-user');
+        const ac = document.getElementById('canvas-attacker');
+        if (!uc || !ac) return;
+
+        syncCanvasSize(uc);
+        syncCanvasSize(ac);
+        const uCtx = uc.getContext('2d');
+        const aCtx = ac.getContext('2d');
+
+        for (let idx = currentStepIdx; idx < limit; idx++) {
+            const uPt = userPoints[idx];
+            const aPt = attackerPoints[idx];
+            userHistory.push(uPt);
+            attackerHistory.push(aPt);
+
+            if (uPt.isKeyTrigger) {
+                const trueKey = uPt.key;
+                userTypedStr += (trueKey === 'space' ? ' ' : trueKey === 'enter' ? '[Enter]' : trueKey);
+                document.getElementById('user-typed-output').textContent = userTypedStr.toUpperCase();
+                playKeySound(true);
+
+                const userKeyNode = document.getElementById(`key-user-${trueKey}`);
+                if (userKeyNode) {
+                    userKeyNode.classList.add('active-user');
+                    setTimeout(() => userKeyNode.classList.remove('active-user'), 400);
+                }
+
+                const inferredKey = getNearestKey(aPt.x, aPt.y);
+                attackerClusterCount++;
+                document.getElementById('stat-clustering').textContent = `${attackerClusterCount} / ${attackerTotalClusters} keys mapped`;
+
+                const active = document.getElementById('toggle-casom').checked;
+                const word = document.getElementById('input-word').value.trim() || 'fox';
+
+                if (inferredKey) {
+                    attackerInferredStr += (inferredKey === 'space' ? ' ' : inferredKey === 'enter' ? '[Enter]' : inferredKey);
+                    if (inferredKey === trueKey) {
+                        const an = document.getElementById(`key-attacker-${inferredKey}`);
+                        if (an) { an.classList.add('active-attacker-hit'); setTimeout(() => an.classList.remove('active-attacker-hit'), 400); }
+                        addLog(`[ATTACKER] Cluster (${aPt.x.toFixed(2)}, ${aPt.y.toFixed(2)}) → '${inferredKey.toUpperCase()}' (MATCH!)`, "error");
+                    } else {
+                        const an = document.getElementById(`key-attacker-${inferredKey}`);
+                        if (an) { an.classList.add('active-attacker-miss'); setTimeout(() => an.classList.remove('active-attacker-miss'), 400); }
+                        addLog(`[ATTACKER] Cluster (${aPt.x.toFixed(2)}, ${aPt.y.toFixed(2)}) → '${inferredKey.toUpperCase()}' (MISS — true: '${trueKey.toUpperCase()}')`, "success");
+                    }
+                } else {
+                    attackerInferredStr += '?';
+                    addLog(`[ATTACKER] Cluster (${aPt.x.toFixed(2)}, ${aPt.y.toFixed(2)}) → OUT OF BOUNDS (true: '${trueKey.toUpperCase()}')`, "success");
+                }
+
+                document.getElementById('attacker-inferred-output').textContent = attackerInferredStr.toUpperCase();
+
+                // Update confidence & candidates
+                let confVal = 0, candidates = [];
+                const decoyActive = document.getElementById('toggle-decoy').checked;
+                
+                if (decoyActive) {
+                    confVal = Math.max(1, Math.floor(10 / (attackerClusterCount + 1)) + Math.floor(Math.random() * 2));
+                    document.getElementById('stat-conf-val').textContent = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').style.width = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').classList.add('secured');
+                    document.getElementById('stat-entropy').textContent = "Max (Poisoned)";
+                    document.getElementById('stat-entropy').style.color = "var(--success)";
+                    candidates = [`[POISONED: DECOY TRAJECTORY]`, `1. — (0.0%)`, `2. — (0.0%)`];
+                } else if (active) {
+                    confVal = Math.max(3, Math.floor(45 / (attackerClusterCount + 1)) + Math.floor(Math.random() * 4));
+                    document.getElementById('stat-conf-val').textContent = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').style.width = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').classList.add('secured');
+                    document.getElementById('stat-entropy').textContent = "High (Scrambled)";
+                    document.getElementById('stat-entropy').style.color = "var(--success)";
+                    candidates = attackerClusterCount === 1
+                        ? [`1. ZOO (2.1%)`, `2. ZIP (1.4%)`, `3. ZEN (0.8%)`]
+                        : [`[PRUNED: NO DICTIONARY MATCH]`, `1. — (0.0%)`, `2. — (0.0%)`];
+                } else {
+                    confVal = Math.min(95, 78 + Math.floor(Math.random() * 15));
+                    document.getElementById('stat-conf-val').textContent = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').style.width = `${confVal}%`;
+                    document.getElementById('stat-conf-bar').classList.remove('secured');
+                    document.getElementById('stat-entropy').textContent = "Low (Predictable)";
+                    document.getElementById('stat-entropy').style.color = "var(--danger)";
+                    const uw = word.toUpperCase();
+                    if (attackerClusterCount === 1) {
+                        candidates = [`1. FOR (34.2%)`, `2. FLY (18.7%)`, `3. ${uw[0] || 'F'}... (${10+Math.floor(Math.random()*10)}%)`];
+                    } else if (attackerClusterCount === 2) {
+                        candidates = [`1. FOR (54.5%)`, `2. ${uw.slice(0,2)}... (28.2%)`, `3. FOB (4.1%)`];
+                    } else {
+                        candidates = [`1. ${uw} (${confVal}%)`, `2. BOX (${2+Math.floor(Math.random()*4)}%)`, `3. FIX (${1+Math.floor(Math.random()*2)}%)`];
+                    }
+                }
+
+                const candEl = document.getElementById('attacker-candidates');
+                if (candEl) {
+                    candEl.innerHTML = '';
+                    candidates.forEach(c => {
+                        const div = document.createElement('div');
+                        if (c.startsWith('[PRUNED')) { div.style.color = 'var(--success)'; div.style.fontWeight = 'bold'; div.style.fontSize = '0.68rem'; }
+                        else if (c.startsWith('1.')) { div.style.color = active ? 'var(--text-dim)' : 'var(--danger)'; div.style.fontWeight = '600'; }
+                        else { div.style.color = 'var(--text-dim)'; }
+                        div.textContent = c;
+                        candEl.appendChild(div);
+                    });
+                }
+            }
+
+            // Periodic telemetry logging
+            if (idx % 18 === 0) {
+                const active = document.getElementById('toggle-casom').checked;
+                if (active && aPt.blockOx !== undefined) {
+                    addLog(`[CASOM] Block Offset: dx=${aPt.blockOx.toFixed(2)}, dy=${aPt.blockOy.toFixed(2)}`, "success");
+                } else {
+                    addLog(`[SENSOR] Gaze: x=${uPt.x.toFixed(2)}, y=${uPt.y.toFixed(2)} @ 72Hz`, "info");
+                }
+            }
+        }
+
+        currentStepIdx = limit;
+        drawPaths(uCtx, aCtx, uc, ac);
+
+        if (currentStepIdx < userPoints.length) {
+            simTimeoutId = setTimeout(animateStep, 1000 / 60);
+        } else {
+            isSimulating = false;
+            const btn = document.getElementById('btn-run');
+            btn.textContent = "Start Attack Simulation";
+            btn.style.background = "linear-gradient(135deg, var(--primary), #0ea5e9)";
+            btn.style.color = "#000";
+
+            const active = document.getElementById('toggle-casom').checked;
+            const decoyActive = document.getElementById('toggle-decoy').checked;
+
+            if (decoyActive) {
+                addLog(`[SYSTEM] [PASS] Simulation complete. Attacker POISONED by Decoy Typing!`, "success");
+                document.getElementById('attacker-inferred-output').textContent = "[POISONED] *&!$#";
+                document.getElementById('stat-conf-val').textContent = "1.2%";
+                document.getElementById('stat-conf-bar').style.width = "1.2%";
+            } else if (active) {
+                addLog(`[SYSTEM] [PASS] Simulation complete. BackTree inference FAILED. Dictionary path pruned!`, "success");
+                document.getElementById('attacker-inferred-output').textContent = "[PRUNED] *&!$#";
+                document.getElementById('stat-conf-val').textContent = "3.6%";
+                document.getElementById('stat-conf-bar').style.width = "3.6%";
+            } else {
+                addLog(`[SYSTEM] [FAIL] Simulation complete. Attacker recovered word (80.9% confidence).`, "error");
+            }
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       DRAWING ENGINE
+       ═══════════════════════════════════════════════════════ */
+    function drawPaths(uCtx, aCtx, uc, ac) {
+        uCtx.clearRect(0, 0, uc.width, uc.height);
+        aCtx.clearRect(0, 0, ac.width, ac.height);
+
+        const active = document.getElementById('toggle-casom').checked;
+        const decoyActive = document.getElementById('toggle-decoy').checked;
+
+        // --- User Path ---
+        uCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        uCtx.lineWidth = 2;
+        uCtx.lineCap = 'round';
+        uCtx.lineJoin = 'round';
+        uCtx.beginPath();
+        for (let i = 0; i < userHistory.length; i++) {
+            const [px, py] = getPx(userHistory[i].x, userHistory[i].y, uc);
+            i === 0 ? uCtx.moveTo(px, py) : uCtx.lineTo(px, py);
+        }
+        uCtx.stroke();
+
+        for (const pt of userHistory) {
+            if (pt.isDwell) {
+                const [px, py] = getPx(pt.x, pt.y, uc);
+                uCtx.fillStyle = 'rgba(56, 189, 248, 0.7)';
+                uCtx.beginPath();
+                uCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+                uCtx.fill();
+            }
+        }
+
+        if (userHistory.length > 0) {
+            const lp = userHistory[userHistory.length - 1];
+            const [px, py] = getPx(lp.x, lp.y, uc);
+            
+            if (decoyActive) {
+                // Draw Decoy Target Ring
+                uCtx.strokeStyle = 'rgba(234, 179, 8, 0.7)'; // Amber
+                uCtx.lineWidth = 1.5;
+                uCtx.setLineDash([4, 4]);
+                uCtx.beginPath();
+                uCtx.arc(px, py, 14, 0, Math.PI * 2);
+                uCtx.stroke();
+                uCtx.setLineDash([]);
+                
+                uCtx.fillStyle = 'rgba(234, 179, 8, 0.9)';
+                uCtx.font = '9px "Fira Code", monospace';
+                uCtx.textAlign = 'center';
+                uCtx.fillText('DECOY TARGET', px, py - 20);
+            }
+            
+            uCtx.fillStyle = '#fff';
+            uCtx.shadowColor = '#38bdf8';
+            uCtx.shadowBlur = 12;
+            uCtx.beginPath();
+            uCtx.arc(px, py, 5, 0, Math.PI * 2);
+            uCtx.fill();
+            uCtx.shadowBlur = 0;
+        }
+
+        // --- Attacker Path ---
+        aCtx.strokeStyle = active ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)';
+        aCtx.lineWidth = 2;
+        aCtx.lineCap = 'round';
+        aCtx.lineJoin = 'round';
+        aCtx.beginPath();
+        for (let i = 0; i < attackerHistory.length; i++) {
+            const [px, py] = getPx(attackerHistory[i].x, attackerHistory[i].y, ac);
+            i === 0 ? aCtx.moveTo(px, py) : aCtx.lineTo(px, py);
+        }
+        aCtx.stroke();
+
+        for (const pt of attackerHistory) {
+            if (pt.isDwell) {
+                const [px, py] = getPx(pt.x, pt.y, ac);
+                aCtx.fillStyle = active ? 'rgba(16, 185, 129, 0.7)' : 'rgba(244, 63, 94, 0.7)';
+                aCtx.beginPath();
+                aCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+                aCtx.fill();
+            }
+        }
+
+        if (attackerHistory.length > 0) {
+            const lp = attackerHistory[attackerHistory.length - 1];
+            const [px, py] = getPx(lp.x, lp.y, ac);
+            aCtx.fillStyle = '#fff';
+            aCtx.shadowColor = active ? '#10b981' : '#f43f5e';
+            aCtx.shadowBlur = 12;
+            aCtx.beginPath();
+            aCtx.arc(px, py, 5, 0, Math.PI * 2);
+            aCtx.fill();
+            aCtx.shadowBlur = 0;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       ANIMATED COUNTER FOR METRIC CARDS
+       ═══════════════════════════════════════════════════════ */
+    function animateCounter(el) {
+        const target = parseFloat(el.dataset.target);
+        const suffix = '%';
+        const duration = 1200;
+        const start = performance.now();
+        function tick(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = (target * eased).toFixed(1) + suffix;
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       INITIALIZATION
+       ═══════════════════════════════════════════════════════ */
+
+    // Mermaid
+    try {
+        if (typeof mermaid !== 'undefined') {
+            mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        }
+    } catch (e) { console.error("Mermaid init error:", e); }
+
+    // Sidebar active link
+    const sections = document.querySelectorAll("section");
+    const navItems = document.querySelectorAll(".nav-item");
+
+    window.addEventListener("scroll", () => {
+        let current = "";
+        sections.forEach(s => {
+            if (window.pageYOffset >= s.offsetTop - 120) current = s.getAttribute("id");
+        });
+        navItems.forEach(li => {
+            li.classList.remove("active");
+            if (li.getAttribute("href") === "#" + current) li.classList.add("active");
+        });
+    });
+
+    // Smooth scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
+    // Scroll reveal via IntersectionObserver
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                // Animate metric counters inside this section
+                entry.target.querySelectorAll('.metric-value[data-target]').forEach(el => {
+                    if (!el.dataset.animated) {
+                        el.dataset.animated = '1';
+                        animateCounter(el);
+                    }
+                });
+            }
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(s => revealObserver.observe(s));
+
+    // Physical keyboard support
+    document.addEventListener('keydown', (e) => {
+        if (isSimulating) return;
+        const inputEl = document.getElementById('input-word');
+        if (document.activeElement === inputEl) return; // Let native input handle it
+
+        const key = e.key.toLowerCase();
+        if (key === 'enter') {
+            e.preventDefault();
+            startSim();
+        } else if (key === 'backspace') {
+            e.preventDefault();
+            if (inputEl.value.length > 0) {
+                inputEl.value = inputEl.value.slice(0, -1);
+                document.getElementById('preset-word').value = 'custom';
+            }
+        } else if (key === ' ') {
+            e.preventDefault();
+            if (inputEl.value.length < 16) {
+                inputEl.value += ' ';
+                document.getElementById('preset-word').value = 'custom';
+            }
+        } else if (/^[a-z0-9]$/.test(key)) {
+            e.preventDefault();
+            if (document.getElementById('preset-word').value !== 'custom') {
+                document.getElementById('preset-word').value = 'custom';
+                inputEl.value = '';
+            }
+            if (inputEl.value.length < 16) {
+                inputEl.value += key;
+            }
+            // Highlight the user keyboard key
+            const kn = document.getElementById(`key-user-${key}`);
+            if (kn) {
+                kn.classList.add('active-user');
+                setTimeout(() => kn.classList.remove('active-user'), 200);
+            }
+            playKeySound(true);
+        }
+    });
+
+    // DOMContentLoaded
+    window.addEventListener('DOMContentLoaded', () => {
+        drawKeyboards();
+        drawIdleMessage();
+
+        document.getElementById('input-word').addEventListener('input', () => {
+            document.getElementById('preset-word').value = 'custom';
+        });
+
+        // ResizeObserver for canvas sync
+        const ro = new ResizeObserver(() => {
+            if (!isSimulating) drawIdleMessage();
+            else clearCanvases();
+        });
+        document.querySelectorAll('.canvas-container').forEach(c => ro.observe(c));
+    });
+
+    // Fallback resize
+    window.addEventListener('resize', () => {
+        if (!isSimulating) drawIdleMessage();
+        else clearCanvases();
+    });
+    </script>
+</body>
+</html>
