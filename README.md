@@ -1,5 +1,13 @@
 # SNOOPFINGER Reimplementation and CASOM Defense Pipeline
 
+> [!TIP]
+> ### Live Interactive Sandboxes
+> Experience the real-time virtual keyboard simulator, side-channel sniffer, and CASOM shield defenses directly in your browser:
+> - **[Launch Sandbox Dashboard (CASOM v2)](./new.html)**: Interactive QWERTY/AZERTY/QWERTZ layout switcher, decoy typing, and real-time IMU gaze sniffer.
+> - **[Launch Explanation & Sandbox (SNOOPFINGER)](./explain.html)**: Step-by-step threat model, KaTeX mathematical equations, and click-to-type keyboard.
+> 
+> *To run: Simply clone this repository and open either [new.html](./new.html) or [explain.html](./explain.html) in any standard web browser (no local server or compilation required).*
+
 This repository provides a comprehensive Python simulation and evaluation suite for the virtual keyboard gaze-snooping attack and defenses described in:
 
 "Eyes on Your Typing: Snooping Finger Motions on Virtual Keyboards." IEEE Symposium on Security and Privacy (S&P), 2025.
