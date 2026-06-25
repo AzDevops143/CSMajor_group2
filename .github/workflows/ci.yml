@@ -33,6 +33,9 @@ jobs:
     - name: Run Demo (Non-Interactive)
       run: python demo.py --auto
 
+    - name: Run Pipeline Benchmark
+      run: python benchmark.py
+
     - name: Upload Generated Figures
       uses: actions/upload-artifact@v4
       with:
