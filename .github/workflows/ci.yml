@@ -36,11 +36,13 @@ jobs:
     - name: Run Pipeline Benchmark
       run: python benchmark.py
 
-    - name: Upload Generated Figures
+    - name: Upload Generated Figures and Dashboards
       uses: actions/upload-artifact@v4
       with:
-        name: evaluation-plots
+        name: evaluation-artifacts
         path: |
           fig_baseline_accuracy_by_length.png
           fig_obfuscation_accuracy_curves.png
           fig_obfuscation_pareto.png
+          new.html
+          explain.html
