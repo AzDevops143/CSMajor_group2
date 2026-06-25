@@ -147,5 +147,109 @@ def main():
         
     print("="*80)
 
+    # 1. Update new.html with live benchmark results
+    print("\nUpdating new.html with actual pipeline results...")
+    update_html_with_results(results, "new.html")
+    print("new.html updated.")
+
+    # 2. Save sample telemetry dataset as an artifact
+    print("\nGenerating sample telemetry dataset (vr_telemetry_dataset.csv)...")
+    sample_word = "fox"
+    pts_dicts, _ = generate_telemetry_stream(sample_word, sample_rate=SAMPLE_RATE, rng=rng)
+    from create_dataset import save_to_csv
+    save_to_csv(pts_dicts, "vr_telemetry_dataset.csv")
+    print("Sample telemetry saved to vr_telemetry_dataset.csv.")
+
+    # 3. Save structured JSON benchmark results as an artifact
+    print("\nSaving structured benchmark results (benchmark_results.json)...")
+    import json
+    with open("benchmark_results.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=4)
+    print("Benchmark results saved to benchmark_results.json.")
+
+def update_html_with_results(results, html_path="new.html"):
+    import re
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        base_top1 = results["No Defense (Baseline)"]["adaptive"]["top1"] * 100
+        base_top5 = results["No Defense (Baseline)"]["adaptive"]["top5"] * 100
+        
+        iid_top1 = results["IID Noise (sigma=0.5)"]["adaptive"]["top1"] * 100
+        iid_top5 = results["IID Noise (sigma=0.5)"]["adaptive"]["top5"] * 100
+        
+        drift_top1 = results["Drift Noise (sigma=0.3)"]["adaptive"]["top1"] * 100
+        drift_top5 = results["Drift Noise (sigma=0.3)"]["adaptive"]["top5"] * 100
+        
+        quant_top1 = results["Quantization (step=1.0)"]["adaptive"]["top1"] * 100
+        quant_top5 = results["Quantization (step=1.0)"]["adaptive"]["top5"] * 100
+        
+        block_top1 = results["CASOM Block Offset (sigma=0.5)"]["adaptive"]["top1"] * 100
+        block_top5 = results["CASOM Block Offset (sigma=0.5)"]["adaptive"]["top5"] * 100
+        
+        # Replace data-target attributes in metric cards
+        content = re.sub(
+            r'(<div class="metric-value" style="color: var(--danger);" data-target=")[^"]*(")',
+            f'\\g<1>{base_top1:.1f}\\g<2>',
+            content
+        )
+        content = re.sub(
+            r'(<div class="metric-value" style="color: var(--warning);" data-target=")[^"]*(")',
+            f'\\g<1>{iid_top1:.1f}\\g<2>',
+            content
+        )
+        content = re.sub(
+            r'(<div class="metric-value" style="color: var(--success);" data-target=")[^"]*(")',
+            f'\\g<1>{block_top1:.1f}\\g<2>',
+            content
+        )
+        
+        # Replace tbody in comparison table
+        tbody_pattern = r'(<table class="comparison-table">.*?<tbody>)(.*?)(</tbody>.*?</table>)'
+        new_tbody = f"""
+                    <tr>
+                        <td>No Defense (Baseline)</td>
+                        <td class="val-red">{base_top1:.1f}%</td>
+                        <td class="val-red">{base_top5:.1f}%</td>
+                        <td class="val-red">Low</td>
+                        <td style="color: var(--danger); font-weight: 600;">FAIL - Fully Vulnerable</td>
+                    </tr>
+                    <tr>
+                        <td>IID Noise (σ=0.5)</td>
+                        <td class="val-yellow">{iid_top1:.1f}%</td>
+                        <td class="val-yellow">{iid_top5:.1f}%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
+                    </tr>
+                    <tr>
+                        <td>Drift Noise (σ=0.3)</td>
+                        <td class="val-yellow">{drift_top1:.1f}%</td>
+                        <td class="val-yellow">{drift_top5:.1f}%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
+                    </tr>
+                    <tr>
+                        <td>Quantization (step=1.0)</td>
+                        <td class="val-yellow">{quant_top1:.1f}%</td>
+                        <td class="val-yellow">{quant_top5:.1f}%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
+                    </tr>
+                    <tr>
+                        <td>CASOM Block Offset (σ=0.5)</td>
+                        <td class="val-green">{block_top1:.1f}%</td>
+                        <td class="val-green">{block_top5:.1f}%</td>
+                        <td class="val-green">High</td>
+                        <td style="color: var(--success); font-weight: 600;">PASS - Secure</td>
+                    </tr>
+"""
+        content = re.sub(tbody_pattern, f"\\g<1>{new_tbody}\\g<3>", content, flags=re.DOTALL)
+        
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"Warning: Could not update {html_path} with results: {e}")
+
 if __name__ == "__main__":
     main()

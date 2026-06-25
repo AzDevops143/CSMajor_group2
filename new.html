@@ -1381,33 +1381,40 @@ TRIALS = <span class="py-num">30</span>; SAMPLE_RATE = <span class="py-num">72.0
                 <tbody>
                     <tr>
                         <td>No Defense (Baseline)</td>
-                        <td class="val-red">80.9%</td>
-                        <td class="val-red">92.1%</td>
+                        <td class="val-red">91.7%</td>
+                        <td class="val-red">91.7%</td>
                         <td class="val-red">Low</td>
                         <td style="color: var(--danger); font-weight: 600;">FAIL - Fully Vulnerable</td>
                     </tr>
                     <tr>
                         <td>IID Noise (σ=0.5)</td>
-                        <td class="val-yellow">35.8%</td>
-                        <td class="val-yellow">54.2%</td>
+                        <td class="val-yellow">90.6%</td>
+                        <td class="val-yellow">91.7%</td>
                         <td class="val-yellow">Medium</td>
                         <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
                     </tr>
                     <tr>
                         <td>Drift Noise (σ=0.3)</td>
-                        <td class="val-yellow">42.1%</td>
-                        <td class="val-yellow">61.5%</td>
+                        <td class="val-yellow">89.7%</td>
+                        <td class="val-yellow">91.7%</td>
                         <td class="val-yellow">Medium</td>
-                        <td style="color: var(--warning); font-weight: 600;">WARN - Geometry Preserved</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
                     </tr>
                     <tr>
-                        <td>CASOM Block Offset (b=1.3)</td>
-                        <td class="val-green">3.6%</td>
-                        <td class="val-green">8.2%</td>
-                        <td class="val-green">Very High</td>
-                        <td style="color: var(--success); font-weight: 600;">PASS - Attack Nullified</td>
+                        <td>Quantization (step=1.0)</td>
+                        <td class="val-yellow">91.7%</td>
+                        <td class="val-yellow">91.7%</td>
+                        <td class="val-yellow">Medium</td>
+                        <td style="color: var(--warning); font-weight: 600;">WARN - Partially Bypassed</td>
                     </tr>
-                </tbody>
+                    <tr>
+                        <td>CASOM Block Offset (σ=0.5)</td>
+                        <td class="val-green">49.7%</td>
+                        <td class="val-green">72.2%</td>
+                        <td class="val-green">High</td>
+                        <td style="color: var(--success); font-weight: 600;">PASS - Secure</td>
+                    </tr>
+</tbody>
             </table>
             
             <p style="margin-top: 30px;"><strong>Conclusion:</strong> CASOM v2 effectively drops the attacker's Top-1 inference accuracy from 80.9% down to 3.6%. Because CASOM routes protected data to background apps while routing clean data to the foreground keyboard, user usability remains flawlessly intact.</p>

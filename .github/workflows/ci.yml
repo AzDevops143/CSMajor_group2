@@ -46,3 +46,5 @@ jobs:
           fig_obfuscation_pareto.png
           new.html
           explain.html
+          benchmark_results.json
+          vr_telemetry_dataset.csv
